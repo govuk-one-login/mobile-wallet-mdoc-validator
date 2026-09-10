@@ -25,9 +25,9 @@ export class TestMDLBuilder {
     validUntil: Tag | string;
     expectedUpdate?: Tag | string;
   };
-  private readonly deviceKey: Map<number, any>;
-  private readonly protectedHeader: any;
-  private readonly unprotectedHeader: Map<number, Uint8Array>;
+  private readonly deviceKey: Map<unknown, unknown>;
+  private readonly protectedHeader: Map<unknown, unknown>;
+  private readonly unprotectedHeader: Map<unknown, unknown>;
 
   private readonly elementsWithoutTag24: Set<string>;
   private readonly elementsWithMismatchedDigests: Map<string, Uint8Array>;
@@ -49,9 +49,9 @@ export class TestMDLBuilder {
       validUntil: new Tag(TAGS.DATE_TIME, "2026-09-10T15:20:00Z"),
     };
 
-    this.deviceKey = new Map<number, number | Uint8Array>(DEFAULT_DEVICE_KEY);
+    this.deviceKey = new Map<unknown, unknown>(DEFAULT_DEVICE_KEY);
 
-    this.protectedHeader = new Map().set(
+    this.protectedHeader = new Map<unknown, unknown>().set(
       COSE_HEADER_PARAMETERS.ALG,
       COSE_ALGORITHMS.ES256,
     );
@@ -59,7 +59,7 @@ export class TestMDLBuilder {
     const documentSigningCertificate = new X509Certificate(
       DEFAULT_DOCUMENT_SIGNING_CERTIFICATE,
     );
-    this.unprotectedHeader = new Map().set(
+    this.unprotectedHeader = new Map<unknown, unknown>().set(
       COSE_HEADER_PARAMETERS.X5_CHAIN,
       new Uint8Array(documentSigningCertificate.raw),
     );
@@ -235,12 +235,12 @@ export class TestMDLBuilder {
     return this;
   }
 
-  withDeviceKeyParameter(key: number, value: any) {
+  withDeviceKeyParameter(key: unknown, value: unknown): this {
     this.deviceKey.set(key, value);
     return this;
   }
 
-  withProtectedHeader(protectedHeader: any) {
+  withProtectedHeader(protectedHeader: Map<unknown, unknown>) {
     this.protectedHeader.clear();
     for (const [key, value] of protectedHeader) {
       this.protectedHeader.set(key, value);
@@ -248,7 +248,7 @@ export class TestMDLBuilder {
     return this;
   }
 
-  withUnprotectedHeader(unprotectedHeader: Map<number, Uint8Array>) {
+  withUnprotectedHeader(unprotectedHeader: Map<unknown, unknown>) {
     this.unprotectedHeader.clear();
     for (const [key, value] of unprotectedHeader) {
       this.unprotectedHeader.set(key, value);

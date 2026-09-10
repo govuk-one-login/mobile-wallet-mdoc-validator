@@ -37,7 +37,7 @@ export async function validateIssuerAuth(
   validateProtectedHeader(protectedHeader);
 
   const unprotectedHeader = issuerAuth[1];
-  const certificate = await validateUnprotectedHeader(unprotectedHeader);
+  const certificate = validateUnprotectedHeader(unprotectedHeader);
 
   const payload = issuerAuth[2];
   await validatePayload(payload, namespaces);
@@ -78,23 +78,23 @@ function validateProtectedHeader(protectedHeader: Uint8Array): void {
   }
 }
 
-async function validateUnprotectedHeader(
+function validateUnprotectedHeader(
   unprotectedHeader: Map<number, Uint8Array>,
-): Promise<X509Certificate> {
+): X509Certificate {
   if (unprotectedHeader.size !== 1) {
     throw new MDLValidationError(
       "Unprotected header contains unexpected extra parameters - must contain only one",
       "INVALID_UNPROTECTED_HEADER",
     );
   }
-  if (!unprotectedHeader.has(COSE_HEADER_PARAMETERS.X5_CHAIN)) {
+  const x5chain = unprotectedHeader.get(COSE_HEADER_PARAMETERS.X5_CHAIN);
+
+  if (x5chain === undefined) {
     throw new MDLValidationError(
       'Unprotected header missing "x5chain" (33)',
       "INVALID_UNPROTECTED_HEADER",
     );
   }
-
-  const x5chain = unprotectedHeader.get(COSE_HEADER_PARAMETERS.X5_CHAIN)!;
 
   let certificate: X509Certificate;
   try {
@@ -193,12 +193,12 @@ function validateDigests(
       const expectedDigest = msoDigests.get(digestID);
       if (!expectedDigest) {
         throw new MDLValidationError(
-          `No digest found for digest ID ${digestID} in MSO namespace ${namespace}: ${[...msoDigests.keys()]}`,
+          `No digest found for digest ID ${digestID.toString()} in MSO namespace ${namespace}`,
         );
       }
       if (!calculatedDigest.equals(expectedDigest)) {
         throw new MDLValidationError(
-          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
+          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID.toString()} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
           "INVALID_DIGESTS",
         );
       }

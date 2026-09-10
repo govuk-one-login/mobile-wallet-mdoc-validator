@@ -26,7 +26,7 @@ export function validateTags(taggedIssuerSigned: TaggedIssuerSigned): void {
 function validateNamespacesTags(element: Tag, namespaceName: string): void {
   if (element.tag !== TAGS.ENCODED_CBOR_DATA) {
     throw new Error(
-      `IssuerSignedItem in namespace '${namespaceName}' missing tag '${TAGS.ENCODED_CBOR_DATA}'`,
+      `IssuerSignedItem in namespace '${namespaceName}' missing tag '${TAGS.ENCODED_CBOR_DATA.toString()}'`,
     );
   }
 
@@ -51,7 +51,7 @@ function validateMobileSecurityObjectTags(payload: Uint8Array) {
   const taggedMsoBytes: Tag = decode(payload);
   if (taggedMsoBytes.tag !== TAGS.ENCODED_CBOR_DATA) {
     throw new Error(
-      `MobileSecurityObjectBytes missing tag '${TAGS.ENCODED_CBOR_DATA}'`,
+      `MobileSecurityObjectBytes missing tag '${TAGS.ENCODED_CBOR_DATA.toString()}'`,
     );
   }
   const mso = decode(
@@ -64,7 +64,9 @@ function validateMobileSecurityObjectTags(payload: Uint8Array) {
     taggedValidityInfo.signed &&
     taggedValidityInfo.signed.tag !== TAGS.DATE_TIME
   ) {
-    throw new Error(`'signed' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME}`);
+    throw new Error(
+      `'signed' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
+    );
   }
 
   if (
@@ -72,7 +74,7 @@ function validateMobileSecurityObjectTags(payload: Uint8Array) {
     taggedValidityInfo.validFrom.tag !== TAGS.DATE_TIME
   ) {
     throw new Error(
-      `'validFrom' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME}`,
+      `'validFrom' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
     );
   }
 
@@ -81,7 +83,7 @@ function validateMobileSecurityObjectTags(payload: Uint8Array) {
     taggedValidityInfo.validUntil.tag !== TAGS.DATE_TIME
   ) {
     throw new Error(
-      `'validUntil' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME}`,
+      `'validUntil' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
     );
   }
 }
