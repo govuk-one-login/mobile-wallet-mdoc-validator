@@ -1,4 +1,4 @@
-import { getAjvInstance } from "../../../ajv/ajvInstance";
+import { getAjvInstance } from "../../ajv/ajvInstance";
 import { mobileSecurityObjectSchema } from "./mobileSecurityObjectSchema";
 import { MobileSecurityObject } from "../types/mobileSecurityObject";
 
@@ -12,7 +12,7 @@ describe("mobileSecurityObjectSchema", () => {
     deviceKeyInfo: {
       deviceKey: new Map(),
       keyAuthorizations: {
-        nameSpaces: ["org.iso.18013.5.1", "org.iso.18013.5.1.GB"],
+        nameSpaces: ["org.namespace.1", "org.iso.18013.5.1.GB"],
       },
     },
     valueDigests: {
@@ -101,23 +101,6 @@ describe("mobileSecurityObjectSchema", () => {
         expect.objectContaining({
           instancePath: "/digestAlgorithm",
           params: { allowedValues: ["SHA-256"] },
-          message: "must be equal to one of the allowed values",
-        }),
-      );
-    });
-  });
-
-  describe("docType", () => {
-    it("should return false when it is not 'org.iso.18013.5.1.mDL'", () => {
-      const data = { ...validData, docType: "invalid.doc.type" };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/docType",
-          params: { allowedValues: ["org.iso.18013.5.1.mDL"] },
           message: "must be equal to one of the allowed values",
         }),
       );
@@ -221,76 +204,6 @@ describe("mobileSecurityObjectSchema", () => {
       });
 
       describe("nameSpaces", () => {
-        it("should return false when it contains an invalid namespace", () => {
-          const data = {
-            ...validData,
-            deviceKeyInfo: {
-              deviceKey: new Map(),
-              keyAuthorizations: {
-                nameSpaces: ["org.iso.18013.5.1", "invalid.namespace"],
-              },
-            },
-          };
-
-          const isValid = validate(data);
-
-          expect(isValid).toBe(false);
-          expect(validate.errors).toContainEqual(
-            expect.objectContaining({
-              instancePath: "/deviceKeyInfo/keyAuthorizations/nameSpaces/1",
-              message: "must be equal to one of the allowed values",
-            }),
-          );
-        });
-
-        it("should return false when it has fewer than 2 items", () => {
-          const data = {
-            ...validData,
-            deviceKeyInfo: {
-              deviceKey: new Map(),
-              keyAuthorizations: {
-                nameSpaces: ["org.iso.18013.5.1"],
-              },
-            },
-          };
-
-          const isValid = validate(data);
-
-          expect(isValid).toBe(false);
-          expect(validate.errors).toContainEqual(
-            expect.objectContaining({
-              instancePath: "/deviceKeyInfo/keyAuthorizations/nameSpaces",
-              message: "must NOT have fewer than 2 items",
-            }),
-          );
-        });
-
-        it("should return false when it has more than 2 items", () => {
-          const data = {
-            ...validData,
-            deviceKeyInfo: {
-              deviceKey: new Map(),
-              keyAuthorizations: {
-                nameSpaces: [
-                  "org.iso.18013.5.1",
-                  "org.iso.18013.5.1.GB",
-                  "org.iso.18013.5.1",
-                ],
-              },
-            },
-          };
-
-          const isValid = validate(data);
-
-          expect(isValid).toBe(false);
-          expect(validate.errors).toContainEqual(
-            expect.objectContaining({
-              instancePath: "/deviceKeyInfo/keyAuthorizations/nameSpaces",
-              message: "must NOT have more than 2 items",
-            }),
-          );
-        });
-
         it("should return false when items are not unique", () => {
           const data = {
             ...validData,
@@ -317,64 +230,6 @@ describe("mobileSecurityObjectSchema", () => {
   });
 
   describe("valueDigests", () => {
-    it("should return false when org.iso.18013.5.1 is missing", () => {
-      const data = {
-        ...validData,
-        valueDigests: {
-          "org.iso.18013.5.1.GB": new Map(),
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/valueDigests",
-          message: "must have required property 'org.iso.18013.5.1'",
-        }),
-      );
-    });
-
-    it("should return false when org.iso.18013.5.1.GB is missing", () => {
-      const data = {
-        ...validData,
-        valueDigests: {
-          "org.iso.18013.5.1": new Map(),
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/valueDigests",
-          message: "must have required property 'org.iso.18013.5.1.GB'",
-        }),
-      );
-    });
-
-    it("should return false when it contains additional properties", () => {
-      const data = {
-        ...validData,
-        valueDigests: {
-          ...validData.valueDigests,
-          "org.unknown.namespace": new Map(),
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/valueDigests",
-          message: "must NOT have additional properties",
-        }),
-      );
-    });
-
     describe("org.iso.18013.5.1", () => {
       it("should return false when it is not a Map", () => {
         const data = {

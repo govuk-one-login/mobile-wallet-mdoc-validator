@@ -1,20 +1,15 @@
-import { getAjvInstance } from "../../../ajv/ajvInstance";
+import { getAjvInstance } from "../../ajv/ajvInstance";
 import { issuerSignedSchema } from "./issuerSignedSchema";
 
 describe("issuerSignedSchema", () => {
   const ajv = getAjvInstance();
-  if (!ajv.getSchema("iso-namespace")) {
-    ajv.addSchema({ $id: "iso-namespace", type: "array" });
-  }
-  if (!ajv.getSchema("domestic-namespace")) {
-    ajv.addSchema({ $id: "domestic-namespace", type: "array" });
-  }
+
   const validate = ajv.compile(issuerSignedSchema);
 
   const validData = {
     nameSpaces: {
-      "org.iso.18013.5.1": [],
-      "org.iso.18013.5.1.GB": [],
+      "org.test.namespace.1": [],
+      "org.test.namespace.2": [],
     },
     issuerAuth: [
       new Uint8Array(),
@@ -69,66 +64,6 @@ describe("issuerSignedSchema", () => {
         message: "must have required property 'issuerAuth'",
       }),
     );
-  });
-
-  describe("nameSpaces", () => {
-    it("should return false when org.iso.18013.5.1 is missing", () => {
-      const data = {
-        ...validData,
-        nameSpaces: {
-          "org.iso.18013.5.1.GB": [],
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/nameSpaces",
-          message: "must have required property 'org.iso.18013.5.1'",
-        }),
-      );
-    });
-
-    it("should return false when org.iso.18013.5.1.GB is missing", () => {
-      const data = {
-        ...validData,
-        nameSpaces: {
-          "org.iso.18013.5.1": [],
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/nameSpaces",
-          message: "must have required property 'org.iso.18013.5.1.GB'",
-        }),
-      );
-    });
-
-    it("should return false when it contains additional properties", () => {
-      const data = {
-        ...validData,
-        nameSpaces: {
-          ...validData.nameSpaces,
-          "org.unknown.namespace": [],
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/nameSpaces",
-          message: "must NOT have additional properties",
-        }),
-      );
-    });
   });
 
   describe("issuerAuth", () => {

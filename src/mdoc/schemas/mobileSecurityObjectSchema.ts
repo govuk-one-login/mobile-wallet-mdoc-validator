@@ -36,38 +36,27 @@ export const mobileSecurityObjectSchema = {
           properties: {
             nameSpaces: {
               type: "array",
-              minItems: 2,
-              maxItems: 2,
+              minItems: 1,
               uniqueItems: true,
               items: {
                 type: "string",
-                enum: ["org.iso.18013.5.1.GB", "org.iso.18013.5.1"],
               },
             },
           },
         },
       },
     },
+    // TODO: how to make this document agnostic?
     valueDigests: {
       type: "object",
-      required: ["org.iso.18013.5.1.GB", "org.iso.18013.5.1"],
-      additionalProperties: false,
-      properties: {
-        "org.iso.18013.5.1.GB": {
-          type: "object",
-          instanceofMap: true,
-          additionalProperties: false,
-        },
-        "org.iso.18013.5.1": {
-          type: "object",
-          instanceofMap: true,
-          additionalProperties: false,
-        },
+      minProperties: 1,
+      additionalProperties: {
+        type: "object",
+        instanceofMap: true,
       },
     },
     docType: {
       type: "string",
-      enum: ["org.iso.18013.5.1.mDL"],
     },
     validityInfo: {
       type: "object",

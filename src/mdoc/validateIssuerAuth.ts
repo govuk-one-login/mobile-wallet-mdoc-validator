@@ -1,6 +1,6 @@
 import { decode, encode, Tag } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
-import { getAjvInstance } from "../../ajv/ajvInstance";
+import { getAjvInstance } from "../ajv/ajvInstance";
 import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MDLValidationError } from "./MDLValidationError";
@@ -32,16 +32,12 @@ const tags = new Map([
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
   namespaces: Record<NameSpace, Tag[]>,
-  rootCertificatePem: string,
 ) {
   const protectedHeader = issuerAuth[0];
   validateProtectedHeader(protectedHeader);
 
   const unprotectedHeader = issuerAuth[1];
-  const certificate = await validateUnprotectedHeader(
-    unprotectedHeader,
-    rootCertificatePem,
-  );
+  const certificate = await validateUnprotectedHeader(unprotectedHeader);
 
   const payload = issuerAuth[2];
   await validatePayload(payload, namespaces);
@@ -84,7 +80,6 @@ function validateProtectedHeader(protectedHeader: Uint8Array): void {
 
 async function validateUnprotectedHeader(
   unprotectedHeader: Map<number, Uint8Array>,
-  rootCertificatePem: string,
 ): Promise<X509Certificate> {
   if (unprotectedHeader.size !== 1) {
     throw new MDLValidationError(
@@ -110,9 +105,6 @@ async function validateUnprotectedHeader(
       "INVALID_UNPROTECTED_HEADER",
     );
   }
-
-  const rootCertificate = new X509Certificate(rootCertificatePem);
-
   if (certificate.ca) {
     throw new MDLValidationError(
       "Document signing certificate must not be a CA certificate",
@@ -127,31 +119,6 @@ async function validateUnprotectedHeader(
   if (now < validFrom || now > validTo) {
     throw new MDLValidationError(
       "Document signing certificate is not valid at the current time",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  if (certificate.issuer !== rootCertificate.subject) {
-    throw new MDLValidationError(
-      "Certificate issuer does not match root subject",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  try {
-    const outcome = certificate.verify(rootCertificate.publicKey);
-    if (!outcome) {
-      throw new MDLValidationError(
-        "Document signing certificate signature not verified",
-        "INVALID_UNPROTECTED_HEADER",
-      );
-    }
-  } catch (error) {
-    if (error instanceof MDLValidationError) {
-      throw error;
-    }
-    throw new MDLValidationError(
-      `Signature could not be verified - ${errorMessage(error)}`,
       "INVALID_UNPROTECTED_HEADER",
     );
   }

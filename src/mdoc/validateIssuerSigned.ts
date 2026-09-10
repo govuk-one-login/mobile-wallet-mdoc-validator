@@ -1,19 +1,11 @@
-import { getAjvInstance } from "../../ajv/ajvInstance";
+import { getAjvInstance } from "../ajv/ajvInstance";
 import { IssuerSigned } from "./types/issuerSigned";
-import { isoNamespaceSchema } from "./schemas/isoNamespaceSchema";
-import { domesticNamespaceSchema } from "./schemas/domesticNamespaceSchema";
 import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { MDLValidationError } from "./MDLValidationError";
 
 export function validateIssuerSignedSchema(issuerSigned: IssuerSigned): void {
   const ajv = getAjvInstance();
 
-  if (!ajv.getSchema("isoNamespace")) {
-    ajv.addSchema(isoNamespaceSchema, "isoNamespace");
-  }
-  if (!ajv.getSchema("domesticNamespace")) {
-    ajv.addSchema(domesticNamespaceSchema, "domesticNamespace");
-  }
   const validator = ajv.compile(issuerSignedSchema);
 
   if (!validator(issuerSigned)) {

@@ -1,14 +1,11 @@
 import { MDLValidationError } from "./MDLValidationError";
-import { NAMESPACES } from "./constants/namespaces";
 import { IssuerSignedItem } from "./types/issuerSigned";
 import { NameSpace } from "./types/namespaces";
 
 export function validateDigestIds(
   namespaces: Record<NameSpace, IssuerSignedItem[]>,
 ) {
-  const namespacesToCheck = [NAMESPACES.ISO, NAMESPACES.GB];
-
-  for (const namespace of namespacesToCheck) {
+  for (const namespace of Object.keys(namespaces)) {
     const digestIds = namespaces[namespace]?.map((item) => item.digestID);
 
     if (!checkUnique(digestIds)) {

@@ -4,24 +4,18 @@ import "cbor2/types";
 import { validateTags } from "./validateTags";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
-import { validatePortrait } from "./validatePortrait";
 import { errorMessage, MDLValidationError } from "./MDLValidationError";
 import { IssuerSigned, TaggedIssuerSigned } from "./types/issuerSigned";
 import { validateIssuerSignedSchema } from "./validateIssuerSigned";
 import { validateDigestIds } from "./validateDigestIds";
-import { NAMESPACES } from "./constants/namespaces";
 
 /**
  * Validates a base64url-encoded mDL credential string.
  *
  * @param credential - Base64url-encoded credential.
- * @param rootCertificatePem - Root certificate in PEM format.
  * @returns true if the credential is valid; otherwise, throws an error.
  */
-export async function isValidCredential(
-  credential: string,
-  rootCertificatePem: string,
-): Promise<boolean> {
+export async function isValidCredential(credential: string): Promise<boolean> {
   const cborBytes = base64UrlToUint8Array(credential);
 
   /*
@@ -43,12 +37,10 @@ export async function isValidCredential(
   validateIssuerSignedSchema(issuerSigned);
 
   validateDigestIds(issuerSigned.nameSpaces);
-  validatePortrait(issuerSigned.nameSpaces[NAMESPACES.ISO]);
 
   await validateIssuerAuth(
     issuerSigned.issuerAuth,
     taggedIssuerSigned.nameSpaces,
-    rootCertificatePem,
   );
 
   return true;
