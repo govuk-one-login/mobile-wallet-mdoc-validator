@@ -610,22 +610,21 @@ h6XK6xERRLkY5jjINTt8TkU=
     });
 
     describe("Value digests", () => {
-      // TODO Rewrite the following test
-      // it("should throw MdocValidationError when the payload's ValueDigests is missing a digest", async () => {
-      //   const credential = new TestMdocBuilder()
-      //     .withoutDigest("welsh_licence")
-      //     .build();
-      //
-      //   expect.assertions(2);
-      //   try {
-      //     await isValidCredential(credential);
-      //   } catch (error) {
-      //     expect(error).toBeInstanceOf(MdocValidationError);
-      //     expect((error as Error).message).toBe(
-      //       "No digest found for digest ID 20 in MSO namespace org.test.namespace.2: 30,40",
-      //     );
-      //   }
-      // });
+      it("should throw MdocValidationError when the payload's ValueDigests is missing a digest", async () => {
+        const credential = new TestMdocBuilder()
+          .withoutDigest("title")
+          .build();
+
+        expect.assertions(2);
+        try {
+          await isValidCredential(credential);
+        } catch (error) {
+          expect(error).toBeInstanceOf(MdocValidationError);
+          expect((error as Error).message).toBe(
+            "No digest found for digest ID 40 in MSO namespace org.test.namespace.1",
+          );
+        }
+      });
 
       it("should throw MdocValidationError when digests don't match", async () => {
         const credential = new TestMdocBuilder()
