@@ -193,12 +193,12 @@ function validateDigests(
       const expectedDigest = msoDigests.get(digestID);
       if (!expectedDigest) {
         throw new MDLValidationError(
-          `No digest found for digest ID ${digestID} in MSO namespace ${namespace}: ${[...msoDigests.keys()]}`,
+          `No digest found for digest ID ${digestID.toString()} in MSO namespace ${namespace}`,
         );
       }
       if (!calculatedDigest.equals(expectedDigest)) {
         throw new MDLValidationError(
-          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
+          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID.toString()} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
           "INVALID_DIGESTS",
         );
       }
