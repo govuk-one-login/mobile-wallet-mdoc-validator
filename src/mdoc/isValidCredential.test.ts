@@ -611,9 +611,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
     describe("Value digests", () => {
       it("should throw MdocValidationError when the payload's ValueDigests is missing a digest", async () => {
-        const credential = new TestMdocBuilder()
-          .withoutDigest("title")
-          .build();
+        const credential = new TestMdocBuilder().withoutDigest("title").build();
 
         expect.assertions(2);
         try {
