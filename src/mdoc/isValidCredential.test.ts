@@ -247,7 +247,7 @@ describe("isValidCredential", () => {
       const mockValidator = jest
         .fn()
         .mockReturnValue(false) as unknown as ValidateFunction;
-      mockValidator.errors = undefined;
+      mockValidator.errors = null;
 
       const mockAjv = {
         getSchema: jest.fn().mockReturnValue(undefined),
@@ -650,7 +650,7 @@ h6XK6xERRLkY5jjINTt8TkU=
           .fn()
           .mockReturnValueOnce(true) // first call IssuerSigned (valid)
           .mockReturnValueOnce(false) as unknown as ValidateFunction; // second call MSO (invalid)
-        mockValidator.errors = undefined;
+        mockValidator.errors = null;
 
         const mockAjv = {
           getSchema: jest.fn().mockReturnValue(undefined),
