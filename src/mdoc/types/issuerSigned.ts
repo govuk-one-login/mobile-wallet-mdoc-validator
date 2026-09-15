@@ -12,7 +12,7 @@ export interface IssuerSignedItem {
   digestID: number;
   elementIdentifier: string;
   // TODO: We need to allow more element value types
-  elementValue: string | boolean | Uint8Array;
+  elementValue: string | boolean | Uint8Array | Tag;
   random: Uint8Array;
 }
 
