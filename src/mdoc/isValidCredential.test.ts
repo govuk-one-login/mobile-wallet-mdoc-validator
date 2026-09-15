@@ -622,7 +622,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       //   } catch (error) {
       //     expect(error).toBeInstanceOf(MdocValidationError);
       //     expect((error as Error).message).toBe(
-      //       "No digest found for digest ID 20 in MSO namespace org.iso.18013.5.1.GB: 30,40",
+      //       "No digest found for digest ID 20 in MSO namespace org.test.namespace.2: 30,40",
       //     );
       //   }
       // });

@@ -10,7 +10,7 @@ import { validateIssuerSignedSchema } from "./validateIssuerSigned";
 import { validateDigestIds } from "./validateDigestIds";
 
 /**
- * Validates a base64url-encoded mDL credential string.
+ * Validates a base64url-encoded mdoc credential string.
  *
  * @param credential - Base64url-encoded credential.
  * @returns true if the credential is valid; otherwise, throws an error.

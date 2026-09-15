@@ -12,14 +12,14 @@ describe("mobileSecurityObjectSchema", () => {
     deviceKeyInfo: {
       deviceKey: new Map(),
       keyAuthorizations: {
-        nameSpaces: ["org.namespace.1", "org.iso.18013.5.1.GB"],
+        nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
       },
     },
     valueDigests: {
-      "org.iso.18013.5.1": new Map(),
-      "org.iso.18013.5.1.GB": new Map(),
+      "org.test.namespace.1": new Map(),
+      "org.test.namespace.2": new Map(),
     },
-    docType: "org.iso.18013.5.1.mDL",
+    docType: "org.test.document",
     validityInfo: {
       signed: "2023-10-10T10:10:10Z",
       validFrom: "2023-10-10T10:10:10Z",
@@ -210,7 +210,7 @@ describe("mobileSecurityObjectSchema", () => {
             deviceKeyInfo: {
               deviceKey: new Map(),
               keyAuthorizations: {
-                nameSpaces: ["org.iso.18013.5.1", "org.iso.18013.5.1"],
+                nameSpaces: ["org.test.namespace.1", "org.test.namespace.1"],
               },
             },
           };
@@ -230,13 +230,13 @@ describe("mobileSecurityObjectSchema", () => {
   });
 
   describe("valueDigests", () => {
-    describe("org.iso.18013.5.1", () => {
+    describe("org.test.namespace.1", () => {
       it("should return false when it is not a Map", () => {
         const data = {
           ...validData,
           valueDigests: {
-            "org.iso.18013.5.1": {},
-            "org.iso.18013.5.1.GB": new Map(),
+            "org.test.namespace.1": {},
+            "org.test.namespace.2": new Map(),
           },
         };
 
@@ -246,13 +246,13 @@ describe("mobileSecurityObjectSchema", () => {
       });
     });
 
-    describe("org.iso.18013.5.1.GB", () => {
+    describe("org.test.namespace.2", () => {
       it("should return false when it is not a Map", () => {
         const data = {
           ...validData,
           valueDigests: {
-            "org.iso.18013.5.1": new Map(),
-            "org.iso.18013.5.1.GB": {},
+            "org.test.namespace.1": new Map(),
+            "org.test.namespace.2": {},
           },
         };
 
