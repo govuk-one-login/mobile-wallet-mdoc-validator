@@ -25,10 +25,7 @@ const tags: TagDecoderMap = new Map([
     (tag: { contents: unknown }) =>
       decode(tag.contents as Uint8Array, { tags: tags }),
   ],
-  [
-    TAGS.DATE_TIME,
-    (tag: { contents: unknown }) => tag.contents,
-  ],
+  [TAGS.DATE_TIME, (tag: { contents: unknown }) => tag.contents],
 ]);
 
 export async function validateIssuerAuth(
