@@ -8,6 +8,8 @@ export function validateDigestIds(
   for (const namespace of Object.keys(namespaces)) {
     const digestIds = namespaces[namespace]?.map((item) => item.digestID);
 
+    if (!digestIds) continue;
+
     if (!checkUnique(digestIds)) {
       throw new MDLValidationError(
         `Digest IDs are not unique for namespace ${namespace}`,
