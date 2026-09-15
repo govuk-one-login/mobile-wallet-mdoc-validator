@@ -46,7 +46,6 @@ export const mobileSecurityObjectSchema = {
         },
       },
     },
-    // TODO: how to make this document agnostic?
     valueDigests: {
       type: "object",
       minProperties: 1,
