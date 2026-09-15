@@ -1,4 +1,4 @@
-import { decode, Tag } from "cbor2";
+import { decode, Tag, type TagDecoderMap } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
 import { validateTags } from "./validateTags";
@@ -75,28 +75,32 @@ Tag.registerDecoder(
   (tag) => new Tag(TAGS.FULL_DATE, tag.contents),
 );
 
-const tags = new Map([
+const tags: TagDecoderMap = new Map([
   [
     TAGS.ENCODED_CBOR_DATA,
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    ({ contents }: { contents: any }) => decode(contents, { tags: tags }),
+    (tag: { contents: unknown }) =>
+      decode(tag.contents as Uint8Array, { tags: tags }),
   ],
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  [TAGS.FULL_DATE, ({ contents }: { contents: any }) => contents],
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  [TAGS.DATE_TIME, ({ contents }: { contents: any }) => contents],
+  [
+    TAGS.FULL_DATE,
+    (tag: { contents: unknown }) => tag.contents,
+  ],
+  [
+    TAGS.DATE_TIME,
+    (tag: { contents: unknown }) => tag.contents,
+  ],
 ]);
 
 function issuerSignedDecoder(credential: Uint8Array): TaggedIssuerSigned;
 
 function issuerSignedDecoder(
   credential: Uint8Array,
-  tags: Map<number, (value: any) => any>,
+  tags: TagDecoderMap,
 ): IssuerSigned;
 
 function issuerSignedDecoder(
   credential: Uint8Array,
-  tags?: Map<number, (value: any) => any>,
+  tags?: TagDecoderMap,
 ): TaggedIssuerSigned | IssuerSigned {
   try {
     return decode(credential, tags ? { tags } : undefined);

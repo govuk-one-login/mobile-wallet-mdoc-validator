@@ -1,4 +1,4 @@
-import { decode, encode, Tag } from "cbor2";
+import { decode, encode, Tag, type TagDecoderMap } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
 import { getAjvInstance } from "../ajv/ajvInstance";
 import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema";
@@ -19,14 +19,16 @@ import {
   COSE_KEY_TYPES,
 } from "./constants/cose";
 
-const tags = new Map([
+const tags: TagDecoderMap = new Map([
   [
     TAGS.ENCODED_CBOR_DATA,
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    ({ contents }: { contents: any }) => decode(contents, { tags: tags }),
+    (tag: { contents: unknown }) =>
+      decode(tag.contents as Uint8Array, { tags: tags }),
   ],
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  [TAGS.DATE_TIME, ({ contents }: { contents: any }) => contents],
+  [
+    TAGS.DATE_TIME,
+    (tag: { contents: unknown }) => tag.contents,
+  ],
 ]);
 
 export async function validateIssuerAuth(
