@@ -104,23 +104,6 @@ function validateUnprotectedHeader(
       "INVALID_UNPROTECTED_HEADER",
     );
   }
-  if (certificate.ca) {
-    throw new MdocValidationError(
-      "Document signing certificate must not be a CA certificate",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  const validFrom = new Date(certificate.validFrom).getTime();
-  const validTo = new Date(certificate.validTo).getTime();
-  const now = Date.now();
-
-  if (now < validFrom || now > validTo) {
-    throw new MdocValidationError(
-      "Document signing certificate is not valid at the current time",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
 
   return certificate;
 }
