@@ -54,9 +54,9 @@ function validateMobileSecurityObjectTags(payload: Uint8Array) {
       `MobileSecurityObjectBytes missing tag '${TAGS.ENCODED_CBOR_DATA.toString()}'`,
     );
   }
-  const mso = decode(
+  const mso = decode<TaggedMobileSecurityObject>(
     taggedMsoBytes.contents as Uint8Array,
-  ) as TaggedMobileSecurityObject;
+  );
 
   const taggedValidityInfo = mso.validityInfo;
 

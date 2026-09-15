@@ -170,10 +170,7 @@ function validateDigests(
   valueDigests: ValueDigests,
   nameSpaces: Record<NameSpace, Tag[]>,
 ): void {
-  for (const [namespace, items] of Object.entries(nameSpaces) as [
-    NameSpace,
-    Tag[],
-  ][]) {
+  for (const [namespace, items] of Object.entries(nameSpaces)) {
     for (const taggedIssuerSignedItemBytes of items) {
       const encodedTaggedIssuerSignedItemBytes = encode(
         taggedIssuerSignedItemBytes,
@@ -184,9 +181,9 @@ function validateDigests(
 
       const issuerSignedItemBytes =
         taggedIssuerSignedItemBytes.contents as Uint8Array;
-      const issuedSignedItem = decode(
+      const issuedSignedItem = decode<TaggedIssuerSignedItem>(
         issuerSignedItemBytes,
-      ) as TaggedIssuerSignedItem;
+      );
       const digestID = issuedSignedItem.digestID;
 
       const msoDigests = valueDigests[namespace] as Map<number, Uint8Array>;
