@@ -176,7 +176,7 @@ export class TestMdocBuilder {
 
   withElementValue(
     elementIdentifier: string,
-    // TODO: We need to allow more element value types
+    // TODO: Accept all CBOR data element value types to match IssuerSignedItem
     elementValue: string | Uint8Array,
   ) {
     for (const items of this.namespaces.values()) {

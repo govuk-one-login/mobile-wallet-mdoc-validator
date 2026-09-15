@@ -30,20 +30,16 @@ function validateNamespacesTags(element: Tag, namespaceName: string): void {
     );
   }
 
-  // TODO: Should we replace this with something else? E.g., if element value is in acceptable date format, check tag
-  // const decodedItem: TaggedIssuerSignedItem = decode(
-  //   element.contents as Uint8Array,
-  // );
-  //
-  // if (FULL_DATE_ELEMENTS.has(decodedItem.elementIdentifier)) {
-  //   if (
-  //     !(decodedItem.elementValue instanceof Tag) ||
-  //     decodedItem.elementValue.tag !== TAGS.FULL_DATE
-  //   ) {
-  //     throw new Error(
-  //       `'${decodedItem.elementIdentifier}' missing tag '${TAGS.FULL_DATE}'`,
-  //     );
-  //   }
+  // TODO: Validate that date element values have the correct CBOR tags (tag 1004 for full-date,
+  // tag 0 for date-time). Since the library is document-agnostic, it cannot rely on a known list
+  // of date elements. Options to explore:
+  // - Detect date-formatted strings and warn/fail if the CBOR tag is missing
+  // - Let consumers pass in a list of date elements for their document type
+  // - Return warnings for untagged date-like values without failing validation
+  // e.g.:
+  // const decodedItem = decode(element.contents as Uint8Array);
+  // if (looksLikeDate(decodedItem.elementValue)) {
+  //   verify element has FULL_DATE (tag 1004) or DATE_TIME (tag 0)
   // }
 }
 

@@ -11,7 +11,7 @@ export type IssuerAuth = [
 export interface IssuerSignedItem {
   digestID: number;
   elementIdentifier: string;
-  // TODO: We need to allow more element value types
+  // TODO: Support all CBOR data element value types (e.g. number, null, Map, array) per ISO 18013-5 §8.3.2.1.2
   elementValue: string | boolean | Uint8Array | Tag;
   random: Uint8Array;
 }
@@ -20,7 +20,7 @@ export interface TaggedIssuerSignedItem extends Omit<
   IssuerSignedItem,
   "elementValue"
 > {
-  // TODO: We need to allow more element value types
+  // TODO: Support all CBOR data element value types (e.g. number, null, Map, array) per ISO 18013-5 §8.3.2.1.2
   elementValue: string | boolean | Uint8Array | Tag;
 }
 
