@@ -60,28 +60,19 @@ function validateMobileSecurityObjectTags(payload: Uint8Array) {
 
   const taggedValidityInfo = mso.validityInfo;
 
-  if (
-    taggedValidityInfo.signed &&
-    taggedValidityInfo.signed.tag !== TAGS.DATE_TIME
-  ) {
+  if (taggedValidityInfo.signed.tag !== TAGS.DATE_TIME) {
     throw new Error(
       `'signed' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
     );
   }
 
-  if (
-    taggedValidityInfo.validFrom &&
-    taggedValidityInfo.validFrom.tag !== TAGS.DATE_TIME
-  ) {
+  if (taggedValidityInfo.validFrom.tag !== TAGS.DATE_TIME) {
     throw new Error(
       `'validFrom' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
     );
   }
 
-  if (
-    taggedValidityInfo.validUntil &&
-    taggedValidityInfo.validUntil.tag !== TAGS.DATE_TIME
-  ) {
+  if (taggedValidityInfo.validUntil.tag !== TAGS.DATE_TIME) {
     throw new Error(
       `'validUntil' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
     );
