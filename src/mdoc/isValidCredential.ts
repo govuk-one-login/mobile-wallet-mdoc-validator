@@ -4,7 +4,7 @@ import "cbor2/types";
 import { validateTags } from "./validateTags";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
-import { errorMessage, MDLValidationError } from "./MDLValidationError";
+import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { IssuerSigned, TaggedIssuerSigned } from "./types/issuerSigned";
 import { validateIssuerSignedSchema } from "./validateIssuerSigned";
 import { validateDigestIds } from "./validateDigestIds";
@@ -50,7 +50,7 @@ function base64UrlToUint8Array(data: string): Uint8Array {
   try {
     return new Uint8Array(base64url.decode(data));
   } catch (error) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Failed to decode base64url encoded credential - ${errorMessage(error)}`,
       "INVALID_BASE64URL",
     );
@@ -99,7 +99,7 @@ function issuerSignedDecoder(
   try {
     return decode(credential, tags ? { tags } : undefined);
   } catch (error) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Failed to decode CBOR encoded credential - ${errorMessage(error)}`,
       "INVALID_CBOR",
     );

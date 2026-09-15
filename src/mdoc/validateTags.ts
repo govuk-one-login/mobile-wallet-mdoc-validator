@@ -1,7 +1,7 @@
 import { decode, Tag } from "cbor2";
 import { TAGS } from "./constants/tags";
 import { TaggedIssuerSigned } from "./types/issuerSigned";
-import { errorMessage, MDLValidationError } from "./MDLValidationError";
+import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { TaggedMobileSecurityObject } from "./types/mobileSecurityObject";
 
 export function validateTags(taggedIssuerSigned: TaggedIssuerSigned): void {
@@ -16,7 +16,7 @@ export function validateTags(taggedIssuerSigned: TaggedIssuerSigned): void {
 
     validateMobileSecurityObjectTags(taggedIssuerSigned.issuerAuth[2]);
   } catch (error) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Failed to validate tags - ${errorMessage(error)}`,
       "INVALID_TAGS",
     );

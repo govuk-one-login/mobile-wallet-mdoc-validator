@@ -1,4 +1,4 @@
-import { MDLValidationError } from "./MDLValidationError";
+import { MdocValidationError } from "./MdocValidationError";
 import { IssuerSignedItem } from "./types/issuerSigned";
 import { NameSpace } from "./types/namespaces";
 
@@ -11,7 +11,7 @@ export function validateDigestIds(
     if (!digestIds) continue;
 
     if (!checkUnique(digestIds)) {
-      throw new MDLValidationError(
+      throw new MdocValidationError(
         `Digest IDs are not unique for namespace ${namespace}`,
         "INVALID_DIGEST_IDS",
       );

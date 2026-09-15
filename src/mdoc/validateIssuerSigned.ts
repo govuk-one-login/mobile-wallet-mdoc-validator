@@ -1,7 +1,7 @@
 import { getAjvInstance } from "../ajv/ajvInstance";
 import { IssuerSigned } from "./types/issuerSigned";
 import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
-import { MDLValidationError } from "./MDLValidationError";
+import { MdocValidationError } from "./MdocValidationError";
 
 export function validateIssuerSignedSchema(issuerSigned: IssuerSigned): void {
   const ajv = getAjvInstance();
@@ -21,7 +21,7 @@ export function validateIssuerSignedSchema(issuerSigned: IssuerSigned): void {
       .map((err) => `${err.path}: ${err.message}`)
       .join("; ");
 
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `IssuerSigned does not comply with schema - ${errorDetails}`,
       "INVALID_SCHEMA",
     );
