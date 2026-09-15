@@ -6,6 +6,10 @@ export const issuerSignedSchema = {
     nameSpaces: {
       type: "object",
       minProperties: 1,
+      additionalProperties: {
+        type: "array",
+        minItems: 1,
+      },
     },
     issuerAuth: {
       type: "array",

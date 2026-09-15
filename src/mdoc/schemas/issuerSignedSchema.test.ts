@@ -8,8 +8,8 @@ describe("issuerSignedSchema", () => {
 
   const validData = {
     nameSpaces: {
-      "org.test.namespace.1": [],
-      "org.test.namespace.2": [],
+      "org.test.namespace.1": [new Uint8Array()],
+      "org.test.namespace.2": [new Uint8Array()],
     },
     issuerAuth: [
       new Uint8Array(),
@@ -77,6 +77,25 @@ describe("issuerSignedSchema", () => {
         expect.objectContaining({
           instancePath: "/nameSpaces",
           message: "must NOT have fewer than 1 properties",
+        }),
+      );
+    });
+
+    it("should return false when a namespace has no items", () => {
+      const data = {
+        ...validData,
+        nameSpaces: {
+          "org.test.namespace.1": [],
+        },
+      };
+
+      const isValid = validate(data);
+
+      expect(isValid).toBe(false);
+      expect(validate.errors).toContainEqual(
+        expect.objectContaining({
+          instancePath: "/nameSpaces/org.test.namespace.1",
+          message: "must NOT have fewer than 1 items",
         }),
       );
     });
