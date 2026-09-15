@@ -66,6 +66,22 @@ describe("issuerSignedSchema", () => {
     );
   });
 
+  describe("nameSpaces", () => {
+    it("should return false when it is empty", () => {
+      const data = { ...validData, nameSpaces: {} };
+
+      const isValid = validate(data);
+
+      expect(isValid).toBe(false);
+      expect(validate.errors).toContainEqual(
+        expect.objectContaining({
+          instancePath: "/nameSpaces",
+          message: "must NOT have fewer than 1 properties",
+        }),
+      );
+    });
+  });
+
   describe("issuerAuth", () => {
     it("should return false when it has fewer than 4 items", () => {
       const data = {
