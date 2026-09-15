@@ -311,7 +311,7 @@ describe("isValidCredential", () => {
     describe("Protected header", () => {
       it("should throw MDLValidationError when protected header is not a Map", async () => {
         const credential = new TestMDLBuilder()
-          .withProtectedHeader("not a map")
+          .withProtectedHeader("not a map" as unknown as Map<unknown, unknown>)
           .build();
 
         expect.assertions(2);
