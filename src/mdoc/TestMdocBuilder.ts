@@ -17,7 +17,7 @@ import {
 import { IssuerSignedItem } from "./types/issuerSigned";
 import { NameSpace } from "./types/namespaces";
 
-export class TestMDLBuilder {
+export class TestMdocBuilder {
   private readonly namespaces: Map<NameSpace, IssuerSignedItem[]>;
   private readonly validityInfo: {
     signed: Tag | string;

@@ -1,5 +1,5 @@
 import { isValidCredential } from "./isValidCredential";
-import { TestMDLBuilder } from "./TestMDLBuilder";
+import { TestMdocBuilder } from "./TestMdocBuilder";
 import { MdocValidationError } from "./MdocValidationError";
 import { Tag } from "cbor2";
 import { base64url } from "jose";
@@ -46,7 +46,7 @@ describe("isValidCredential", () => {
 
   describe("Tags", () => {
     it("should throw MdocValidationError when an IssuerSignedItem in namespace test.namespace.2 is not tagged with 24", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withUntaggedIssuerSignedItemBytes("family_name")
         .build();
 
@@ -62,7 +62,7 @@ describe("isValidCredential", () => {
     });
 
     it("should throw MdocValidationError when an IssuerSignedItem in namespace test.namespace.1 is not tagged with 24", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withUntaggedIssuerSignedItemBytes("portrait")
         .build();
 
@@ -78,7 +78,7 @@ describe("isValidCredential", () => {
     });
 
     it("should throw MdocValidationError when MobileSecurityObjectBytes missing tag '24'", async () => {
-      const credential = new TestMDLBuilder().withUntaggedMsoBytes().build();
+      const credential = new TestMdocBuilder().withUntaggedMsoBytes().build();
 
       await expect(isValidCredential(credential)).rejects.toThrow(
         "MobileSecurityObjectBytes missing tag",
@@ -86,7 +86,7 @@ describe("isValidCredential", () => {
     });
 
     it("should throw MdocValidationError when 'signed' in ValidityInfo is not tagged with 0", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withValidityInfo({
           signed: "2025-12-20T15:20:33Z",
         })
@@ -104,7 +104,7 @@ describe("isValidCredential", () => {
     });
 
     it("should throw MdocValidationError when 'validFrom' in ValidityInfo is not tagged with 0", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withValidityInfo({
           validFrom: "2025-12-20T15:20:33",
         })
@@ -122,7 +122,7 @@ describe("isValidCredential", () => {
     });
 
     it("should throw MdocValidationError when 'validUntil' in ValidityInfo is not tagged with 0", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withValidityInfo({
           validUntil: "2025-12-20T15:20:33",
         })
@@ -162,7 +162,7 @@ describe("isValidCredential", () => {
 
       jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
 
-      const credential = new TestMDLBuilder().build();
+      const credential = new TestMdocBuilder().build();
 
       expect.assertions(2);
       try {
@@ -196,7 +196,7 @@ describe("isValidCredential", () => {
 
       jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
 
-      const credential = new TestMDLBuilder().build();
+      const credential = new TestMdocBuilder().build();
 
       expect.assertions(2);
       try {
@@ -230,7 +230,7 @@ describe("isValidCredential", () => {
 
       jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
 
-      const credential = new TestMDLBuilder().build();
+      const credential = new TestMdocBuilder().build();
 
       expect.assertions(2);
       try {
@@ -257,7 +257,7 @@ describe("isValidCredential", () => {
 
       jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
 
-      const credential = new TestMDLBuilder().build();
+      const credential = new TestMdocBuilder().build();
 
       expect.assertions(2);
       try {
@@ -273,7 +273,7 @@ describe("isValidCredential", () => {
 
   describe("Digest IDs", () => {
     it("should throw MdocValidationError when digest IDs within a namespace are not unique", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withDigestId("given_name", 10)
         .withDigestId("family_name", 10)
         .build();
@@ -290,7 +290,7 @@ describe("isValidCredential", () => {
     });
 
     it("should throw MdocValidationError when digest IDs within a namespace are not unique", async () => {
-      const credential = new TestMDLBuilder()
+      const credential = new TestMdocBuilder()
         .withDigestId("portrait", 10)
         .withDigestId("title", 10)
         .build();
@@ -310,7 +310,7 @@ describe("isValidCredential", () => {
   describe("IssuerAuth", () => {
     describe("Protected header", () => {
       it("should throw MdocValidationError when protected header is not a Map", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withProtectedHeader("not a map" as unknown as Map<unknown, unknown>)
           .build();
 
@@ -326,7 +326,7 @@ describe("isValidCredential", () => {
       });
 
       it("should throw MdocValidationError when protected header has more than one key", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withProtectedHeader(new Map().set(1, -7).set(2, "b"))
           .build();
 
@@ -342,7 +342,7 @@ describe("isValidCredential", () => {
       });
 
       it("should throw MdocValidationError when protected header is missing algorithm (1) key", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withProtectedHeader(new Map().set(2, -7))
           .build();
 
@@ -358,7 +358,7 @@ describe("isValidCredential", () => {
       });
 
       it("should throw MdocValidationError when protected header algorithm is not ES256 (-1)", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withProtectedHeader(new Map().set(1, 7))
           .build();
 
@@ -376,7 +376,7 @@ describe("isValidCredential", () => {
 
     describe("Unprotected header", () => {
       it("should throw MdocValidationError when unprotected header has more than one key", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withUnprotectedHeader(
             new Map().set(33, new Uint8Array()).set(2, new Uint8Array()),
           )
@@ -394,7 +394,7 @@ describe("isValidCredential", () => {
       });
 
       it("should throw MdocValidationError when unprotected header is missing x5chain (33) key", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withUnprotectedHeader(new Map().set(1, new Uint8Array()))
           .build();
 
@@ -410,7 +410,7 @@ describe("isValidCredential", () => {
       });
 
       it("should throw MdocValidationError when certificate is not a valid X509 certificate", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withUnprotectedHeader(new Map().set(33, new Uint8Array()))
           .build();
 
@@ -445,7 +445,7 @@ IwQYMBaAFOuameupM0YpmgBT5Q4WxFe6TVMUMAoGCCqGSM49BAMCA0gAMEUCIEBO
 RlvvhrfRUeNSJ0B18SsHCw1r4YUoJ206JZPFWxsRAiEA39zuNQ4ituFpufYFAUzb
 h6XK6xERRLkY5jjINTt8TkU=
 -----END CERTIFICATE-----`);
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withUnprotectedHeader(
             new Map().set(
               33,
@@ -491,7 +491,7 @@ h6XK6xERRLkY5jjINTt8TkU=
           .spyOn(ajvModule, "getAjvInstance")
           .mockReturnValue(mockAjv as never);
 
-        const credential = new TestMDLBuilder().build();
+        const credential = new TestMdocBuilder().build();
 
         expect.assertions(2);
         try {
@@ -528,7 +528,7 @@ h6XK6xERRLkY5jjINTt8TkU=
           .spyOn(ajvModule, "getAjvInstance")
           .mockReturnValue(mockAjv as never);
 
-        const credential = new TestMDLBuilder().build();
+        const credential = new TestMdocBuilder().build();
 
         expect.assertions(2);
         try {
@@ -565,7 +565,7 @@ h6XK6xERRLkY5jjINTt8TkU=
           .spyOn(ajvModule, "getAjvInstance")
           .mockReturnValue(mockAjv as never);
 
-        const credential = new TestMDLBuilder().build();
+        const credential = new TestMdocBuilder().build();
 
         expect.assertions(2);
         try {
@@ -595,7 +595,7 @@ h6XK6xERRLkY5jjINTt8TkU=
           .spyOn(ajvModule, "getAjvInstance")
           .mockReturnValue(mockAjv as never);
 
-        const credential = new TestMDLBuilder().build();
+        const credential = new TestMdocBuilder().build();
 
         expect.assertions(2);
         try {
@@ -612,7 +612,7 @@ h6XK6xERRLkY5jjINTt8TkU=
     describe("Value digests", () => {
       // TODO Rewrite the following test
       // it("should throw MdocValidationError when the payload's ValueDigests is missing a digest", async () => {
-      //   const credential = new TestMDLBuilder()
+      //   const credential = new TestMdocBuilder()
       //     .withoutDigest("welsh_licence")
       //     .build();
       //
@@ -628,7 +628,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       // });
 
       it("should throw MdocValidationError when digests don't match", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withMismatchedDigest(
             "family_name",
             new Uint8Array(Buffer.from("incorrect-digest")),
@@ -649,7 +649,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
     describe("Device key", () => {
       it("should throw MdocValidationError when it has invalid keys", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withDeviceKeyParameter(999, 1)
           .build();
 
@@ -665,7 +665,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when key type (1) is not EC2 (2)", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withDeviceKeyParameter(1, 1)
           .build();
 
@@ -681,7 +681,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when curve (-1) is not P-256 (1)", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withDeviceKeyParameter(-1, 2)
           .build();
 
@@ -697,7 +697,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when x-coordinate (-2) is not a Uint8Array", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withDeviceKeyParameter(-2, 123)
           .build();
 
@@ -713,7 +713,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when y-coordinate (-3) is not a Uint8Array", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withDeviceKeyParameter(-3, "string")
           .build();
 
@@ -729,7 +729,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when it is not a valid public key", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withDeviceKeyParameter(-2, new Uint8Array())
           .withDeviceKeyParameter(-3, new Uint8Array())
           .build();
@@ -746,7 +746,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
     describe("Validity info", () => {
       it("should throw MdocValidationError when 'signed' is in the future", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withValidityInfo({
             signed: new Tag(0, "2025-09-10T15:40:00Z"),
             validFrom: new Tag(0, "2025-09-10T15:40:00Z"),
@@ -765,7 +765,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when 'validFrom' is before 'signed'", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withValidityInfo({
             signed: new Tag(0, "2025-09-10T15:25:00Z"),
             validFrom: new Tag(0, "2025-09-10T15:20:00Z"),
@@ -784,7 +784,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when 'validUntil' is in the past", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withValidityInfo({
             validUntil: new Tag(0, "2025-09-09T15:30:00Z"),
           })
@@ -802,7 +802,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should throw MdocValidationError when 'expectedUpdate' is after 'validUntil'", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withValidityInfo({
             expectedUpdate: new Tag(0, "2027-01-01T00:00:00Z"),
             validUntil: new Tag(0, "2026-09-10T15:20:00Z"),
@@ -821,7 +821,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should not throw when 'expectedUpdate' is before 'validUntil'", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withValidityInfo({
             expectedUpdate: new Tag(0, "2026-01-01T00:00:00Z"),
           })
@@ -831,7 +831,7 @@ h6XK6xERRLkY5jjINTt8TkU=
       });
 
       it("should not throw when 'expectedUpdate' equals 'validUntil'", async () => {
-        const credential = new TestMDLBuilder()
+        const credential = new TestMdocBuilder()
           .withValidityInfo({
             expectedUpdate: new Tag(0, "2026-09-10T15:20:00Z"),
           })
@@ -843,7 +843,7 @@ h6XK6xERRLkY5jjINTt8TkU=
   });
 
   it("should return true when credential is valid", async () => {
-    const credential = new TestMDLBuilder().build();
+    const credential = new TestMdocBuilder().build();
     expect(await isValidCredential(credential)).toBe(true);
   });
 });
