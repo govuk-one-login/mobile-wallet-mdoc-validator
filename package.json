@@ -28,7 +28,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "TZ=UTC jest --silent"
+    "test": "TZ=UTC jest --coverage"
   },
   "dependencies": {
     "@peculiar/x509": "^2.0.0",
