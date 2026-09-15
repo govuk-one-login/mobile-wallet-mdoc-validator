@@ -31,8 +31,7 @@ describe("getAjvInstance", () => {
     const result = validate({ name: "", age: -1 });
 
     expect(result).toBe(false);
-    expect(validate.errors).toBeDefined();
-    expect(validate.errors!.length).toBeGreaterThan(1); // Should report all errors
+    expect(validate.errors?.length).toBeGreaterThan(1); // Should report all errors
   });
 
   it("should support URI format validation", () => {
