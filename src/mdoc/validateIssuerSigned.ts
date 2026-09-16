@@ -1,6 +1,5 @@
 import { ZodError } from "zod";
-import { IssuerSigned } from "./types/issuerSigned";
-import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
+import { IssuerSigned, issuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { MdocValidationError } from "./MdocValidationError";
 
 export function validateIssuerSignedSchema(issuerSigned: IssuerSigned): void {

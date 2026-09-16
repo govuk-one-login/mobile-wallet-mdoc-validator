@@ -1,5 +1,5 @@
 import { MdocValidationError } from "./MdocValidationError";
-import { IssuerSignedItem } from "./types/issuerSigned";
+import { IssuerSignedItem } from "./schemas/issuerSignedSchema";
 import { NameSpace } from "./types/namespaces";
 
 export function validateDigestIds(

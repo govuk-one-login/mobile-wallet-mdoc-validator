@@ -1,5 +1,7 @@
-import { mobileSecurityObjectSchema } from "./mobileSecurityObjectSchema";
-import { MobileSecurityObject } from "../types/mobileSecurityObject";
+import {
+  MobileSecurityObject,
+  mobileSecurityObjectSchema,
+} from "./mobileSecurityObjectSchema";
 
 describe("mobileSecurityObjectSchema", () => {
   const validData: MobileSecurityObject = {

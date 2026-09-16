@@ -58,3 +58,6 @@ export const taggedIssuerSignedSchema = z
   .strict();
 
 export type TaggedIssuerSigned = z.infer<typeof taggedIssuerSignedSchema>;
+export type IssuerSignedItem = z.infer<typeof issuerSignedItemSchema>;
+export type IssuerSigned = z.infer<typeof issuerSignedSchema>;
+export type IssuerAuth = IssuerSigned["issuerAuth"];

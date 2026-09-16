@@ -14,7 +14,7 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-import { IssuerSignedItem } from "./types/issuerSigned";
+import { IssuerSignedItem } from "./schemas/issuerSignedSchema";
 import { NameSpace } from "./types/namespaces";
 
 export class TestMdocBuilder {

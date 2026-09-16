@@ -47,3 +47,7 @@ export const mobileSecurityObjectSchema = z
       .strict(),
   })
   .strict();
+
+export type MobileSecurityObject = z.infer<typeof mobileSecurityObjectSchema>;
+export type ValidityInfo = MobileSecurityObject["validityInfo"];
+export type ValueDigests = MobileSecurityObject["valueDigests"];

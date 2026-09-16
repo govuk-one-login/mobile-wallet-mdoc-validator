@@ -1,16 +1,17 @@
 import { decode, encode, Tag, type TagDecoderMap } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
 import { ZodError } from "zod";
-import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema";
-import { TAGS } from "./constants/tags";
-import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { IssuerAuth, TaggedIssuerSignedItem } from "./types/issuerSigned";
-import { NameSpace } from "./types/namespaces";
 import {
   MobileSecurityObject,
   ValidityInfo,
   ValueDigests,
-} from "./types/mobileSecurityObject";
+  mobileSecurityObjectSchema,
+} from "./schemas/mobileSecurityObjectSchema";
+import { TAGS } from "./constants/tags";
+import { errorMessage, MdocValidationError } from "./MdocValidationError";
+import { IssuerAuth } from "./schemas/issuerSignedSchema";
+import { TaggedIssuerSignedItem } from "./types/issuerSigned";
+import { NameSpace } from "./types/namespaces";
 import {
   COSE_ALGORITHMS,
   COSE_ELLIPTIC_CURVES,

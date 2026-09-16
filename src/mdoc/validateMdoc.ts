@@ -6,8 +6,10 @@ import { validateTags } from "./validateTags";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { IssuerSigned } from "./types/issuerSigned";
-import { taggedIssuerSignedSchema } from "./schemas/issuerSignedSchema";
+import {
+  IssuerSigned,
+  taggedIssuerSignedSchema,
+} from "./schemas/issuerSignedSchema";
 import { validateIssuerSignedSchema } from "./validateIssuerSigned";
 import { validateDigestIds } from "./validateDigestIds";
 
