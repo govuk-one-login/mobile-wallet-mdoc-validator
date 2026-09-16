@@ -11,7 +11,7 @@ export type IssuerAuth = [
 export interface IssuerSignedItem {
   digestID: number;
   elementIdentifier: string;
-  elementValue: string | boolean | Uint8Array | Tag;
+  elementValue: string | boolean | Uint8Array;
   random: Uint8Array;
 }
 
