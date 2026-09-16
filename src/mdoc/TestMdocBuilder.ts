@@ -14,11 +14,11 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-import { IssuerSignedItem } from "./types/issuerSigned";
+import { TaggedIssuerSignedItem } from "./types/issuerSigned";
 import { NameSpace } from "./types/namespaces";
 
 export class TestMdocBuilder {
-  private readonly namespaces: Map<NameSpace, IssuerSignedItem[]>;
+  private readonly namespaces: Map<NameSpace, TaggedIssuerSignedItem[]>;
   private readonly validityInfo: {
     signed: Tag | string;
     validFrom: Tag | string;
