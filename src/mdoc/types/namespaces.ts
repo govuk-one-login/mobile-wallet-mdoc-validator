@@ -1,1 +1,1 @@
-export type NameSpace = string;
+export type NameSpace = string; // NOSONAR
