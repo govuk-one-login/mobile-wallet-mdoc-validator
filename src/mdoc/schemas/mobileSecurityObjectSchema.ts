@@ -8,7 +8,7 @@ export const mobileSecurityObjectSchema = z
     digestAlgorithm: z.literal("SHA-256"),
     deviceKeyInfo: z
       .object({
-        deviceKey: z.instanceof(Map),
+        deviceKey: z.map(z.unknown(), z.unknown()),
         keyAuthorizations: z
           .object({
             nameSpaces: z
@@ -22,7 +22,7 @@ export const mobileSecurityObjectSchema = z
       })
       .strict(),
     valueDigests: z
-      .record(z.instanceof(Map))
+      .record(z.map(z.number(), z.instanceof(Uint8Array)))
       .refine((obj) => Object.keys(obj).length > 0, {
         message: "must NOT have fewer than 1 properties",
       }),
