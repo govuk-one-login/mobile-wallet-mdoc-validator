@@ -2,7 +2,6 @@ import { decode, Tag, type TagDecoderMap } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
 import { ZodError } from "zod";
-import { validateTags } from "./validateTags";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
@@ -28,7 +27,7 @@ export async function validateMdoc(credential: string): Promise<boolean> {
   2. issuerSignedDecoder(cborBytes, tags)   → removes CBOR tags
 
   This may seem redundant, but it's required:
-  - The first decoding ensures the required CBOR tags are present so they can be validated in validateTags.
+  - The first decoding ensures the required CBOR tags are present so they can be validated.
   - The second decoding converts tagged structures into plain JavaScript values.
 
   Skipping either step would either leave tag data unchecked or produce objects that are harder to validate.
@@ -36,7 +35,6 @@ export async function validateMdoc(credential: string): Promise<boolean> {
   const taggedIssuerSigned = validateTaggedIssuerSignedSchema(
     issuerSignedDecoder(cborBytes),
   );
-  validateTags(taggedIssuerSigned);
 
   const issuerSigned: IssuerSigned = issuerSignedDecoder(cborBytes, tags);
 

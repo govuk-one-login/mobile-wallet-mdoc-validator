@@ -1,5 +1,6 @@
 import { Tag } from "cbor2";
 import { z } from "zod";
+import { TAGS } from "../constants/tags";
 
 export const issuerSignedItemSchema = z
   .object({
@@ -39,11 +40,17 @@ export const issuerSignedSchema = z
   })
   .strict();
 
+const cborEncodedDataTag = z
+  .instanceof(Tag)
+  .refine((tag) => tag.tag === TAGS.ENCODED_CBOR_DATA, {
+    message: "must be tagged with 24 (encoded CBOR data)",
+  });
+
 export const taggedIssuerSignedSchema = z
   .object({
     nameSpaces: z
       .record(
-        z.array(z.instanceof(Tag)).min(1, "must NOT have fewer than 1 items"),
+        z.array(cborEncodedDataTag).min(1, "must NOT have fewer than 1 items"),
       )
       .refine((obj) => Object.keys(obj).length > 0, {
         message: "must NOT have fewer than 1 properties",
