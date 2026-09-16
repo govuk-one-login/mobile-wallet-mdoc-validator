@@ -174,21 +174,6 @@ export class TestMdocBuilder {
     return base64url.encode(encode(result));
   }
 
-  withElementValue(
-    elementIdentifier: string,
-    // TODO: Accept all CBOR data element value types to match IssuerSignedItem
-    elementValue: string | Uint8Array,
-  ) {
-    for (const items of this.namespaces.values()) {
-      const item = items.find((i) => i.elementIdentifier === elementIdentifier);
-      if (item) {
-        item.elementValue = elementValue;
-        return this;
-      }
-    }
-    return this;
-  }
-
   withDigestId(elementIdentifier: string, digestId: number) {
     for (const items of this.namespaces.values()) {
       const item = items.find((i) => i.elementIdentifier === elementIdentifier);
