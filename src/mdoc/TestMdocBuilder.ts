@@ -28,10 +28,8 @@ export class TestMdocBuilder {
   private readonly protectedHeader: Map<unknown, unknown>;
   private readonly unprotectedHeader: Map<unknown, unknown>;
 
-  private readonly elementsWithoutTag24: Set<string>;
   private readonly elementsWithMismatchedDigests: Map<string, Uint8Array>;
   private readonly elementsWithoutDigests: Set<string>;
-  private untaggedMsoBytes = false;
 
   constructor() {
     this.namespaces = new Map();
@@ -63,7 +61,6 @@ export class TestMdocBuilder {
       new Uint8Array(documentSigningCertificate.raw),
     );
 
-    this.elementsWithoutTag24 = new Set<string>();
     this.elementsWithoutDigests = new Set<string>();
     this.elementsWithMismatchedDigests = new Map<string, Uint8Array>();
   }
@@ -78,13 +75,7 @@ export class TestMdocBuilder {
 
       for (const item of items) {
         const itemEncoded = encode(item);
-        const shouldTag = !this.elementsWithoutTag24.has(
-          item.elementIdentifier,
-        );
-
-        const taggedItem = shouldTag
-          ? new Tag(TAGS.ENCODED_CBOR_DATA, itemEncoded)
-          : itemEncoded;
+        const taggedItem = new Tag(TAGS.ENCODED_CBOR_DATA, itemEncoded);
 
         nameSpacesEncoded[namespace].push(taggedItem);
 
@@ -131,10 +122,7 @@ export class TestMdocBuilder {
     };
 
     const msoBytes = encode(mso);
-    const tagged = this.untaggedMsoBytes
-      ? msoBytes
-      : new Tag(TAGS.ENCODED_CBOR_DATA, msoBytes);
-    const payload = encode(tagged);
+    const payload = encode(new Tag(TAGS.ENCODED_CBOR_DATA, msoBytes));
 
     const protectedHeader = encode(this.protectedHeader);
     const toBeSigned = encode([
@@ -181,16 +169,6 @@ export class TestMdocBuilder {
         return this;
       }
     }
-    return this;
-  }
-
-  withUntaggedIssuerSignedItemBytes(elementIdentifier: string) {
-    this.elementsWithoutTag24.add(elementIdentifier);
-    return this;
-  }
-
-  withUntaggedMsoBytes(): this {
-    this.untaggedMsoBytes = true;
     return this;
   }
 
