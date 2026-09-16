@@ -1,15 +1,11 @@
-import { decode, Tag, type TagDecoderMap } from "cbor2";
+import { decode, Tag } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
 import { ZodError } from "zod";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import {
-  IssuerSigned,
-  taggedIssuerSignedSchema,
-} from "./schemas/issuerSignedSchema";
-import { validateIssuerSignedSchema } from "./validateIssuerSigned";
+import { taggedIssuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { validateDigestIds } from "./validateDigestIds";
 
 /**
@@ -21,29 +17,14 @@ import { validateDigestIds } from "./validateDigestIds";
 export async function validateMdoc(credential: string): Promise<boolean> {
   const cborBytes = base64UrlToUint8Array(credential);
 
-  /*
-  The CBOR bytes are intentionally decoded twice.
-  1. issuerSignedDecoder(cborBytes)         → preserves CBOR tags
-  2. issuerSignedDecoder(cborBytes, tags)   → removes CBOR tags
-
-  This may seem redundant, but it's required:
-  - The first decoding ensures the required CBOR tags are present so they can be validated.
-  - The second decoding converts tagged structures into plain JavaScript values.
-
-  Skipping either step would either leave tag data unchecked or produce objects that are harder to validate.
-  */
   const taggedIssuerSigned = validateTaggedIssuerSignedSchema(
-    issuerSignedDecoder(cborBytes),
+    decodeCbor(cborBytes),
   );
-
-  const issuerSigned: IssuerSigned = issuerSignedDecoder(cborBytes, tags);
-
-  validateIssuerSignedSchema(issuerSigned);
 
   validateDigestIds(taggedIssuerSigned.nameSpaces);
 
   await validateIssuerAuth(
-    issuerSigned.issuerAuth,
+    taggedIssuerSigned.issuerAuth,
     taggedIssuerSigned.nameSpaces,
   );
 
@@ -75,27 +56,9 @@ Tag.registerDecoder(
   (tag) => new Tag(TAGS.DATE_TIME, tag.contents),
 );
 
-const tags: TagDecoderMap = new Map([
-  [
-    TAGS.ENCODED_CBOR_DATA,
-    (tag: { contents: unknown }) =>
-      decode(tag.contents as Uint8Array, { tags: tags }),
-  ],
-]);
-
-function issuerSignedDecoder(credential: Uint8Array): unknown;
-
-function issuerSignedDecoder(
-  credential: Uint8Array,
-  tags: TagDecoderMap,
-): IssuerSigned;
-
-function issuerSignedDecoder(
-  credential: Uint8Array,
-  tags?: TagDecoderMap,
-): unknown {
+function decodeCbor(credential: Uint8Array): unknown {
   try {
-    return decode(credential, tags ? { tags } : undefined);
+    return decode(credential);
   } catch (error) {
     throw new MdocValidationError(
       `Failed to decode CBOR encoded credential - ${errorMessage(error)}`,

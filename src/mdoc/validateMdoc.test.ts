@@ -151,7 +151,7 @@ describe("validateMdoc", () => {
       ];
 
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .spyOn(issuerSignedSchemaModule.taggedIssuerSignedSchema, "parse")
         .mockImplementation(() => {
           throw new ZodError(zodIssues);
         });
@@ -164,7 +164,7 @@ describe("validateMdoc", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
-          "IssuerSigned does not comply with schema - path: must be a string",
+          "TaggedIssuerSigned does not comply with schema - path: must be a string",
         );
       }
     });
@@ -181,7 +181,7 @@ describe("validateMdoc", () => {
       ];
 
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .spyOn(issuerSignedSchemaModule.taggedIssuerSignedSchema, "parse")
         .mockImplementation(() => {
           throw new ZodError(zodIssues);
         });
@@ -194,7 +194,7 @@ describe("validateMdoc", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
-          "IssuerSigned does not comply with schema - root: must be a string",
+          "TaggedIssuerSigned does not comply with schema - root: must be a string",
         );
       }
     });
@@ -211,7 +211,7 @@ describe("validateMdoc", () => {
       ];
 
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .spyOn(issuerSignedSchemaModule.taggedIssuerSignedSchema, "parse")
         .mockImplementation(() => {
           throw new ZodError(zodIssues);
         });
@@ -224,14 +224,14 @@ describe("validateMdoc", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
-          "IssuerSigned does not comply with schema - path: Expected string, received number",
+          "TaggedIssuerSigned does not comply with schema - path: Expected string, received number",
         );
       }
     });
 
     it("should throw MdocValidationError with empty error details when issues array is empty", async () => {
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .spyOn(issuerSignedSchemaModule.taggedIssuerSignedSchema, "parse")
         .mockImplementation(() => {
           throw new ZodError([]);
         });
@@ -244,7 +244,7 @@ describe("validateMdoc", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
-          "IssuerSigned does not comply with schema - ",
+          "TaggedIssuerSigned does not comply with schema - ",
         );
       }
     });

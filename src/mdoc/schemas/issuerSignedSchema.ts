@@ -57,7 +57,7 @@ export const taggedIssuerSignedSchema = z
       }),
     issuerAuth: z.tuple([
       z.instanceof(Uint8Array),
-      z.instanceof(Map),
+      z.map(z.number(), z.instanceof(Uint8Array)),
       z.instanceof(Uint8Array),
       z.instanceof(Uint8Array),
     ]),
