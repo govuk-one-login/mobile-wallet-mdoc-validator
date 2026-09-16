@@ -265,7 +265,7 @@ describe("mobileSecurityObjectSchema", () => {
       expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
           path: ["deviceKeyInfo", "deviceKey"],
-          code: "custom",
+          code: "invalid_type",
         }),
       );
     });

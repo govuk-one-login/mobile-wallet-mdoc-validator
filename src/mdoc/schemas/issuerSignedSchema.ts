@@ -9,7 +9,7 @@ export const issuerSignedSchema = z
       }),
     issuerAuth: z.tuple([
       z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
-      z.instanceof(Map, { message: "must be instance of Map" }),
+      z.map(z.number(), z.instanceof(Uint8Array)),
       z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
       z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
     ]),
