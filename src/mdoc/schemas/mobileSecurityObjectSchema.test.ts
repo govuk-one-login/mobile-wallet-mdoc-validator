@@ -1,3 +1,4 @@
+import { Tag } from "cbor2";
 import {
   MobileSecurityObject,
   mobileSecurityObjectSchema,
@@ -19,10 +20,10 @@ describe("mobileSecurityObjectSchema", () => {
     },
     docType: "org.test.document",
     validityInfo: {
-      signed: "2023-10-10T10:10:10Z",
-      validFrom: "2023-10-10T10:10:10Z",
-      validUntil: "2024-10-10T10:10:10Z",
-      expectedUpdate: "2024-06-01T00:00:00Z",
+      signed: new Tag(0, "2023-10-10T10:10:10Z"),
+      validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+      validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+      expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
     },
     status: {
       status_list: {
@@ -63,10 +64,10 @@ describe("mobileSecurityObjectSchema", () => {
         },
         docType: "org.test.document",
         validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
+          signed: new Tag(0, "2023-10-10T10:10:10Z"),
+          validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+          validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+          expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
         },
         status: {
           status_list: { idx: 1, uri: "https://example.com/status" },
@@ -89,10 +90,10 @@ describe("mobileSecurityObjectSchema", () => {
         },
         docType: "org.test.document",
         validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
+          signed: new Tag(0, "2023-10-10T10:10:10Z"),
+          validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+          validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+          expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
         },
         status: {
           status_list: { idx: 1, uri: "https://example.com/status" },
@@ -110,10 +111,10 @@ describe("mobileSecurityObjectSchema", () => {
         },
         docType: "org.test.document",
         validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
+          signed: new Tag(0, "2023-10-10T10:10:10Z"),
+          validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+          validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+          expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
         },
         status: {
           status_list: { idx: 1, uri: "https://example.com/status" },
@@ -133,10 +134,10 @@ describe("mobileSecurityObjectSchema", () => {
         },
         docType: "org.test.document",
         validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
+          signed: new Tag(0, "2023-10-10T10:10:10Z"),
+          validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+          validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+          expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
         },
         status: {
           status_list: { idx: 1, uri: "https://example.com/status" },
@@ -159,10 +160,10 @@ describe("mobileSecurityObjectSchema", () => {
           "org.test.namespace.2": new Map(),
         },
         validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
+          signed: new Tag(0, "2023-10-10T10:10:10Z"),
+          validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+          validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+          expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
         },
         status: {
           status_list: { idx: 1, uri: "https://example.com/status" },
@@ -207,10 +208,10 @@ describe("mobileSecurityObjectSchema", () => {
         },
         docType: "org.test.document",
         validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
+          signed: new Tag(0, "2023-10-10T10:10:10Z"),
+          validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+          validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
+          expectedUpdate: new Tag(0, "2024-06-01T00:00:00Z"),
         },
       },
     },
@@ -425,7 +426,7 @@ describe("mobileSecurityObjectSchema", () => {
       expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
           path: ["validityInfo", "signed"],
-          code: "invalid_type",
+          code: "custom",
         }),
       );
     });
@@ -446,7 +447,7 @@ describe("mobileSecurityObjectSchema", () => {
       expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
           path: ["validityInfo", "validFrom"],
-          code: "invalid_type",
+          code: "custom",
         }),
       );
     });
@@ -467,7 +468,7 @@ describe("mobileSecurityObjectSchema", () => {
       expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
           path: ["validityInfo", "validUntil"],
-          code: "invalid_type",
+          code: "custom",
         }),
       );
     });
@@ -508,7 +509,7 @@ describe("mobileSecurityObjectSchema", () => {
         expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
             path: ["validityInfo", "signed"],
-            code: "invalid_string",
+            code: "custom",
           }),
         );
       });
@@ -530,7 +531,7 @@ describe("mobileSecurityObjectSchema", () => {
         expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
             path: ["validityInfo", "validFrom"],
-            code: "invalid_string",
+            code: "custom",
           }),
         );
       });
@@ -552,7 +553,7 @@ describe("mobileSecurityObjectSchema", () => {
         expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
             path: ["validityInfo", "validUntil"],
-            code: "invalid_string",
+            code: "custom",
           }),
         );
       });
@@ -574,7 +575,7 @@ describe("mobileSecurityObjectSchema", () => {
         expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
             path: ["validityInfo", "expectedUpdate"],
-            code: "invalid_string",
+            code: "custom",
           }),
         );
       });
@@ -583,9 +584,9 @@ describe("mobileSecurityObjectSchema", () => {
         const data = {
           ...validData,
           validityInfo: {
-            signed: validData.validityInfo.signed,
-            validFrom: validData.validityInfo.validFrom,
-            validUntil: validData.validityInfo.validUntil,
+            signed: new Tag(0, "2023-10-10T10:10:10Z"),
+            validFrom: new Tag(0, "2023-10-10T10:10:10Z"),
+            validUntil: new Tag(0, "2024-10-10T10:10:10Z"),
           },
         };
 

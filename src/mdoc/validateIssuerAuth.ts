@@ -1,13 +1,13 @@
-import { decode, encode, Tag, type TagDecoderMap } from "cbor2";
+import { decode, encode, Tag } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
 import { ZodError } from "zod";
 import {
   MobileSecurityObject,
   ValidityInfo,
   ValueDigests,
+  mobileSecurityObjectBytesSchema,
   mobileSecurityObjectSchema,
 } from "./schemas/mobileSecurityObjectSchema";
-import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { IssuerAuth } from "./schemas/issuerSignedSchema";
 import { TaggedIssuerSignedItem } from "./types/issuerSigned";
@@ -19,15 +19,6 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-
-const tags: TagDecoderMap = new Map([
-  [
-    TAGS.ENCODED_CBOR_DATA,
-    (tag: { contents: unknown }) =>
-      decode(tag.contents as Uint8Array, { tags: tags }),
-  ],
-  [TAGS.DATE_TIME, (tag: { contents: unknown }) => tag.contents],
-]);
 
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
@@ -113,20 +104,18 @@ async function validatePayload(
   payload: Uint8Array,
   nameSpaces: Record<NameSpace, Tag[]>,
 ) {
-  const mobileSecurityObject: MobileSecurityObject = decode(payload, {
-    tags: tags,
-  });
-  validateMobileSecurityObject(mobileSecurityObject);
+  const msoBytes = mobileSecurityObjectBytesSchema.parse(decode(payload));
+  const mobileSecurityObject = validateMobileSecurityObject(
+    decode(msoBytes.contents),
+  );
   validateDigests(mobileSecurityObject.valueDigests, nameSpaces);
   await validateDeviceKey(mobileSecurityObject.deviceKeyInfo.deviceKey);
   validateValidityInfo(mobileSecurityObject.validityInfo);
 }
 
-function validateMobileSecurityObject(
-  mobileSecurityObject: MobileSecurityObject,
-): void {
+function validateMobileSecurityObject(data: unknown): MobileSecurityObject {
   try {
-    mobileSecurityObjectSchema.parse(mobileSecurityObject);
+    return mobileSecurityObjectSchema.parse(data);
   } catch (error) {
     if (error instanceof ZodError) {
       const errorDetails = error.issues
@@ -296,7 +285,9 @@ function validateValidityInfo(validityInfo: ValidityInfo): void {
   const errors: string[] = [];
   const now = new Date();
 
-  const { signed, validFrom, validUntil } = validityInfo;
+  const signed = String(validityInfo.signed.contents);
+  const validFrom = String(validityInfo.validFrom.contents);
+  const validUntil = String(validityInfo.validUntil.contents);
 
   const signedDate = new Date(signed);
   const validFromDate = new Date(validFrom);
@@ -313,10 +304,11 @@ function validateValidityInfo(validityInfo: ValidityInfo): void {
     );
 
   if (validityInfo.expectedUpdate) {
-    const expectedUpdateDate = new Date(validityInfo.expectedUpdate);
+    const expectedUpdate = String(validityInfo.expectedUpdate.contents);
+    const expectedUpdateDate = new Date(expectedUpdate);
     if (expectedUpdateDate > validUntilDate)
       errors.push(
-        `'expectedUpdate' (${validityInfo.expectedUpdate}) must be less than or equal to 'validUntil' (${validUntil})`,
+        `'expectedUpdate' (${expectedUpdate}) must be less than or equal to 'validUntil' (${validUntil})`,
       );
   }
 

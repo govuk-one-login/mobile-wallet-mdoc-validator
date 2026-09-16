@@ -1,8 +1,7 @@
-import { decode, Tag } from "cbor2";
+import { Tag } from "cbor2";
 import { TAGS } from "./constants/tags";
 import { TaggedIssuerSigned } from "./schemas/issuerSignedSchema";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { TaggedMobileSecurityObject } from "./types/mobileSecurityObject";
 
 export function validateTags(taggedIssuerSigned: TaggedIssuerSigned): void {
   try {
@@ -13,8 +12,6 @@ export function validateTags(taggedIssuerSigned: TaggedIssuerSigned): void {
         validateNamespacesTags(element, namespaceName);
       }
     }
-
-    validateMobileSecurityObjectTags(taggedIssuerSigned.issuerAuth[2]);
   } catch (error) {
     throw new MdocValidationError(
       `Failed to validate tags - ${errorMessage(error)}`,
@@ -27,38 +24,6 @@ function validateNamespacesTags(element: Tag, namespaceName: string): void {
   if (element.tag !== TAGS.ENCODED_CBOR_DATA) {
     throw new Error(
       `IssuerSignedItem in namespace '${namespaceName}' missing tag '${TAGS.ENCODED_CBOR_DATA.toString()}'`,
-    );
-  }
-}
-
-function validateMobileSecurityObjectTags(payload: Uint8Array) {
-  const taggedMsoBytes: Tag = decode(payload);
-  if (taggedMsoBytes.tag !== TAGS.ENCODED_CBOR_DATA) {
-    throw new Error(
-      `MobileSecurityObjectBytes missing tag '${TAGS.ENCODED_CBOR_DATA.toString()}'`,
-    );
-  }
-  const mso = decode<TaggedMobileSecurityObject>(
-    taggedMsoBytes.contents as Uint8Array,
-  );
-
-  const taggedValidityInfo = mso.validityInfo;
-
-  if (taggedValidityInfo.signed.tag !== TAGS.DATE_TIME) {
-    throw new Error(
-      `'signed' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
-    );
-  }
-
-  if (taggedValidityInfo.validFrom.tag !== TAGS.DATE_TIME) {
-    throw new Error(
-      `'validFrom' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
-    );
-  }
-
-  if (taggedValidityInfo.validUntil.tag !== TAGS.DATE_TIME) {
-    throw new Error(
-      `'validUntil' in 'ValidityInfo' missing tag ${TAGS.DATE_TIME.toString()}`,
     );
   }
 }
