@@ -1,4 +1,4 @@
-import { decode, encode, Tag } from "cbor2";
+import { decode, encode } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
 import { ZodError } from "zod";
 import {
@@ -12,8 +12,8 @@ import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import {
   IssuerAuth,
   issuerSignedItemSchema,
+  NameSpaces,
 } from "./schemas/issuerSignedSchema";
-import { NameSpace } from "./types/namespaces";
 import {
   COSE_ALGORITHMS,
   COSE_ELLIPTIC_CURVES,
@@ -24,7 +24,7 @@ import {
 
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
-  namespaces: Record<NameSpace, Tag[]>,
+  namespaces: NameSpaces,
 ) {
   const protectedHeader = issuerAuth[0];
   validateProtectedHeader(protectedHeader);
@@ -102,10 +102,7 @@ function validateUnprotectedHeader(
   return certificate;
 }
 
-async function validatePayload(
-  payload: Uint8Array,
-  nameSpaces: Record<NameSpace, Tag[]>,
-) {
+async function validatePayload(payload: Uint8Array, nameSpaces: NameSpaces) {
   const msoBytes = mobileSecurityObjectBytesSchema.parse(decode(payload));
   const mobileSecurityObject = validateMobileSecurityObject(
     decode(msoBytes.contents),
@@ -135,7 +132,7 @@ function validateMobileSecurityObject(data: unknown): MobileSecurityObject {
 
 function validateDigests(
   valueDigests: ValueDigests,
-  nameSpaces: Record<NameSpace, Tag[]>,
+  nameSpaces: NameSpaces,
 ): void {
   for (const [namespace, items] of Object.entries(nameSpaces)) {
     for (const taggedIssuerSignedItemBytes of items) {

@@ -47,3 +47,4 @@ export const issuerSignedSchema = z
 export type IssuerSigned = z.infer<typeof issuerSignedSchema>;
 export type IssuerSignedItem = z.infer<typeof issuerSignedItemSchema>;
 export type IssuerAuth = IssuerSigned["issuerAuth"];
+export type NameSpaces = IssuerSigned["nameSpaces"];

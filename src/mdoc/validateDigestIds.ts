@@ -1,8 +1,11 @@
-import { decode, Tag } from "cbor2";
+import { decode } from "cbor2";
 import { MdocValidationError } from "./MdocValidationError";
-import { issuerSignedItemSchema } from "./schemas/issuerSignedSchema";
+import {
+  issuerSignedItemSchema,
+  NameSpaces,
+} from "./schemas/issuerSignedSchema";
 
-export function validateDigestIds(namespaces: Record<string, Tag[]>) {
+export function validateDigestIds(namespaces: NameSpaces) {
   for (const [namespace, items] of Object.entries(namespaces)) {
     const digestIds = items.map((taggedItem) => {
       if (!(taggedItem.contents instanceof Uint8Array)) {
