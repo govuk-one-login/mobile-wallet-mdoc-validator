@@ -1,6 +1,6 @@
 import { decode, Tag } from "cbor2";
 import { TAGS } from "./constants/tags";
-import { TaggedIssuerSigned } from "./types/issuerSigned";
+import { TaggedIssuerSigned } from "./schemas/issuerSignedSchema";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { TaggedMobileSecurityObject } from "./types/mobileSecurityObject";
 

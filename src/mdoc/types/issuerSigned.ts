@@ -28,7 +28,3 @@ export interface IssuerSigned {
   issuerAuth: IssuerAuth;
   nameSpaces: Record<NameSpace, IssuerSignedItem[]>;
 }
-
-export interface TaggedIssuerSigned extends Omit<IssuerSigned, "nameSpaces"> {
-  nameSpaces: Record<NameSpace, Tag[]>;
-}

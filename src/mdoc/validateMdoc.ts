@@ -1,11 +1,13 @@
 import { decode, Tag, type TagDecoderMap } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
+import { ZodError } from "zod";
 import { validateTags } from "./validateTags";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { IssuerSigned, TaggedIssuerSigned } from "./types/issuerSigned";
+import { IssuerSigned } from "./types/issuerSigned";
+import { taggedIssuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { validateIssuerSignedSchema } from "./validateIssuerSigned";
 import { validateDigestIds } from "./validateDigestIds";
 
@@ -29,7 +31,9 @@ export async function validateMdoc(credential: string): Promise<boolean> {
 
   Skipping either step would either leave tag data unchecked or produce objects that are harder to validate.
   */
-  const taggedIssuerSigned: TaggedIssuerSigned = issuerSignedDecoder(cborBytes);
+  const taggedIssuerSigned = validateTaggedIssuerSignedSchema(
+    issuerSignedDecoder(cborBytes),
+  );
   validateTags(taggedIssuerSigned);
 
   const issuerSigned: IssuerSigned = issuerSignedDecoder(cborBytes, tags);
@@ -79,7 +83,7 @@ const tags: TagDecoderMap = new Map([
   ],
 ]);
 
-function issuerSignedDecoder(credential: Uint8Array): TaggedIssuerSigned;
+function issuerSignedDecoder(credential: Uint8Array): unknown;
 
 function issuerSignedDecoder(
   credential: Uint8Array,
@@ -89,7 +93,7 @@ function issuerSignedDecoder(
 function issuerSignedDecoder(
   credential: Uint8Array,
   tags?: TagDecoderMap,
-): TaggedIssuerSigned | IssuerSigned {
+): unknown {
   try {
     return decode(credential, tags ? { tags } : undefined);
   } catch (error) {
@@ -97,5 +101,23 @@ function issuerSignedDecoder(
       `Failed to decode CBOR encoded credential - ${errorMessage(error)}`,
       "INVALID_CBOR",
     );
+  }
+}
+
+function validateTaggedIssuerSignedSchema(data: unknown) {
+  try {
+    return taggedIssuerSignedSchema.parse(data);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const errorDetails = error.issues
+        .map((issue) => `${issue.path.join("/") || "root"}: ${issue.message}`)
+        .join("; ");
+
+      throw new MdocValidationError(
+        `TaggedIssuerSigned does not comply with schema - ${errorDetails}`,
+        "INVALID_SCHEMA",
+      );
+    }
+    throw error;
   }
 }

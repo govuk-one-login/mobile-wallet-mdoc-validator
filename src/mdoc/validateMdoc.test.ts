@@ -54,9 +54,9 @@ describe("validateMdoc", () => {
       try {
         await validateMdoc(credential);
       } catch (error) {
-        expect(error).toBeInstanceOf(Error);
+        expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toContain(
-          "Failed to validate tags - IssuerSignedItem in namespace 'org.test.namespace.2' missing tag '24'",
+          "TaggedIssuerSigned does not comply with schema - nameSpaces/org.test.namespace.2/0",
         );
       }
     });
@@ -71,8 +71,8 @@ describe("validateMdoc", () => {
         await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
-        expect((error as Error).message).toBe(
-          "Failed to validate tags - IssuerSignedItem in namespace 'org.test.namespace.1' missing tag '24'",
+        expect((error as Error).message).toContain(
+          "TaggedIssuerSigned does not comply with schema - nameSpaces/org.test.namespace.1/0",
         );
       }
     });
