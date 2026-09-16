@@ -302,8 +302,8 @@ const DEFAULT_NAMESPACES = new Map([
         random: new Uint8Array([
           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
         ]),
-        elementIdentifier: "birth_date",
-        elementValue: new Tag(TAGS.FULL_DATE, "2000-12-12"),
+        elementIdentifier: "issue_date",
+        elementValue: new Tag(TAGS.DATE_TIME, "2020-01-01T00:00:00Z"),
       },
     ],
   ],
