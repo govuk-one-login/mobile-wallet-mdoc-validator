@@ -29,18 +29,6 @@ function validateNamespacesTags(element: Tag, namespaceName: string): void {
       `IssuerSignedItem in namespace '${namespaceName}' missing tag '${TAGS.ENCODED_CBOR_DATA.toString()}'`,
     );
   }
-
-  // TODO: Validate that date element values have the correct CBOR tags (tag 1004 for full-date,
-  // tag 0 for date-time). Since the library is document-agnostic, it cannot rely on a known list
-  // of date elements. Options to explore:
-  // - Detect date-formatted strings and warn/fail if the CBOR tag is missing
-  // - Let consumers pass in a list of date elements for their document type
-  // - Return warnings for untagged date-like values without failing validation
-  // e.g.:
-  // const decodedItem = decode(element.contents as Uint8Array);
-  // if (looksLikeDate(decodedItem.elementValue)) {
-  //   verify element has FULL_DATE (tag 1004) or DATE_TIME (tag 0)
-  // }
 }
 
 function validateMobileSecurityObjectTags(payload: Uint8Array) {
