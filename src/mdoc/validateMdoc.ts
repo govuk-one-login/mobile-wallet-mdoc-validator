@@ -70,10 +70,6 @@ Tag.registerDecoder(
   TAGS.DATE_TIME,
   (tag) => new Tag(TAGS.DATE_TIME, tag.contents),
 );
-Tag.registerDecoder(
-  TAGS.FULL_DATE,
-  (tag) => new Tag(TAGS.FULL_DATE, tag.contents),
-);
 
 const tags: TagDecoderMap = new Map([
   [
@@ -81,8 +77,6 @@ const tags: TagDecoderMap = new Map([
     (tag: { contents: unknown }) =>
       decode(tag.contents as Uint8Array, { tags: tags }),
   ],
-  [TAGS.FULL_DATE, (tag: { contents: unknown }) => tag.contents],
-  [TAGS.DATE_TIME, (tag: { contents: unknown }) => tag.contents],
 ]);
 
 function issuerSignedDecoder(credential: Uint8Array): TaggedIssuerSigned;
