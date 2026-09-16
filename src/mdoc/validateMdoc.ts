@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { taggedIssuerSignedSchema } from "./schemas/issuerSignedSchema";
+import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { validateDigestIds } from "./validateDigestIds";
 
 /**
@@ -17,16 +17,11 @@ import { validateDigestIds } from "./validateDigestIds";
 export async function validateMdoc(credential: string): Promise<boolean> {
   const cborBytes = base64UrlToUint8Array(credential);
 
-  const taggedIssuerSigned = validateTaggedIssuerSignedSchema(
-    decodeCbor(cborBytes),
-  );
+  const issuerSigned = validateIssuerSignedSchema(decodeCbor(cborBytes));
 
-  validateDigestIds(taggedIssuerSigned.nameSpaces);
+  validateDigestIds(issuerSigned.nameSpaces);
 
-  await validateIssuerAuth(
-    taggedIssuerSigned.issuerAuth,
-    taggedIssuerSigned.nameSpaces,
-  );
+  await validateIssuerAuth(issuerSigned.issuerAuth, issuerSigned.nameSpaces);
 
   return true;
 }
@@ -67,9 +62,9 @@ function decodeCbor(credential: Uint8Array): unknown {
   }
 }
 
-function validateTaggedIssuerSignedSchema(data: unknown) {
+function validateIssuerSignedSchema(data: unknown) {
   try {
-    return taggedIssuerSignedSchema.parse(data);
+    return issuerSignedSchema.parse(data);
   } catch (error) {
     if (error instanceof ZodError) {
       const errorDetails = error.issues
@@ -77,7 +72,7 @@ function validateTaggedIssuerSignedSchema(data: unknown) {
         .join("; ");
 
       throw new MdocValidationError(
-        `TaggedIssuerSigned does not comply with schema - ${errorDetails}`,
+        `IssuerSigned does not comply with schema - ${errorDetails}`,
         "INVALID_SCHEMA",
       );
     }

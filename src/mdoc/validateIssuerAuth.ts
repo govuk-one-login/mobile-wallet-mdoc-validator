@@ -9,8 +9,10 @@ import {
   mobileSecurityObjectSchema,
 } from "./schemas/mobileSecurityObjectSchema";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { IssuerAuth } from "./schemas/issuerSignedSchema";
-import { TaggedIssuerSignedItem } from "./types/issuerSigned";
+import {
+  IssuerAuth,
+  issuerSignedItemSchema,
+} from "./schemas/issuerSignedSchema";
 import { NameSpace } from "./types/namespaces";
 import {
   COSE_ALGORITHMS,
@@ -144,14 +146,25 @@ function validateDigests(
         .update(encodedTaggedIssuerSignedItemBytes)
         .digest();
 
-      const issuerSignedItemBytes =
-        taggedIssuerSignedItemBytes.contents as Uint8Array;
-      const issuedSignedItem = decode<TaggedIssuerSignedItem>(
-        issuerSignedItemBytes,
+      if (!(taggedIssuerSignedItemBytes.contents instanceof Uint8Array)) {
+        throw new MdocValidationError(
+          `IssuerSignedItem contents is not a Uint8Array in namespace ${namespace}`,
+          "INVALID_SCHEMA",
+        );
+      }
+
+      const issuedSignedItem = issuerSignedItemSchema.parse(
+        decode(taggedIssuerSignedItemBytes.contents),
       );
       const digestID = issuedSignedItem.digestID;
 
-      const msoDigests = valueDigests[namespace] as Map<number, Uint8Array>;
+      const msoDigests = valueDigests[namespace];
+      if (!msoDigests) {
+        throw new MdocValidationError(
+          `No digests found for namespace ${namespace}`,
+          "INVALID_DIGESTS",
+        );
+      }
       const expectedDigest = msoDigests.get(digestID);
       if (!expectedDigest) {
         throw new MdocValidationError(

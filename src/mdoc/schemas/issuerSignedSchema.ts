@@ -20,33 +20,13 @@ export const issuerSignedItemSchema = z
   })
   .strict();
 
-export const issuerSignedSchema = z
-  .object({
-    nameSpaces: z
-      .record(
-        z
-          .array(issuerSignedItemSchema)
-          .min(1, "must NOT have fewer than 1 items"),
-      )
-      .refine((obj) => Object.keys(obj).length > 0, {
-        message: "must NOT have fewer than 1 properties",
-      }),
-    issuerAuth: z.tuple([
-      z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
-      z.map(z.number(), z.instanceof(Uint8Array)),
-      z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
-      z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
-    ]),
-  })
-  .strict();
-
 const cborEncodedDataTag = z
   .instanceof(Tag)
   .refine((tag) => tag.tag === TAGS.ENCODED_CBOR_DATA, {
     message: "must be tagged with 24 (encoded CBOR data)",
   });
 
-export const taggedIssuerSignedSchema = z
+export const issuerSignedSchema = z
   .object({
     nameSpaces: z
       .record(
@@ -64,7 +44,6 @@ export const taggedIssuerSignedSchema = z
   })
   .strict();
 
-export type TaggedIssuerSigned = z.infer<typeof taggedIssuerSignedSchema>;
-export type IssuerSignedItem = z.infer<typeof issuerSignedItemSchema>;
 export type IssuerSigned = z.infer<typeof issuerSignedSchema>;
+export type IssuerSignedItem = z.infer<typeof issuerSignedItemSchema>;
 export type IssuerAuth = IssuerSigned["issuerAuth"];

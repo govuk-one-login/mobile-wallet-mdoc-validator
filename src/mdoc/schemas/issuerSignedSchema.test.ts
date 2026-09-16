@@ -1,17 +1,24 @@
-import { issuerSignedSchema } from "./issuerSignedSchema";
+import { encode, Tag } from "cbor2";
+import {
+  issuerSignedItemSchema,
+  issuerSignedSchema,
+} from "./issuerSignedSchema";
 
 describe("issuerSignedSchema", () => {
-  const validItem = {
-    digestID: 1,
-    elementIdentifier: "test_element",
-    elementValue: "test_value",
-    random: new Uint8Array(16),
-  };
+  const validTaggedItem = new Tag(
+    24,
+    encode({
+      digestID: 1,
+      elementIdentifier: "test_element",
+      elementValue: "test_value",
+      random: new Uint8Array(16),
+    }),
+  );
 
   const validData = {
     nameSpaces: {
-      "org.test.namespace.1": [validItem],
-      "org.test.namespace.2": [validItem],
+      "org.test.namespace.1": [validTaggedItem],
+      "org.test.namespace.2": [validTaggedItem],
     },
     issuerAuth: [
       new Uint8Array(),
@@ -20,6 +27,12 @@ describe("issuerSignedSchema", () => {
       new Uint8Array(),
     ] as const,
   };
+
+  it("should return true when data is valid", () => {
+    const result = issuerSignedSchema.safeParse(validData);
+
+    expect(result.success).toBe(true);
+  });
 
   it("should return false when it contains additional properties", () => {
     const data = {
@@ -105,322 +118,59 @@ describe("issuerSignedSchema", () => {
       );
     });
 
-    describe("IssuerSignedItem", () => {
-      it("should return false when digestID is missing", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
+    it("should return false when an item is not a Tag", () => {
+      const data = {
+        ...validData,
+        nameSpaces: {
+          "org.test.namespace.1": [
+            {
+              digestID: 1,
+              elementIdentifier: "test_element",
+              elementValue: "test_value",
+              random: new Uint8Array(16),
+            },
+          ],
+        },
+      };
 
-        const result = issuerSignedSchema.safeParse(data);
+      const result = issuerSignedSchema.safeParse(data);
 
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "digestID"],
-            code: "invalid_type",
-          }),
-        );
-      });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["nameSpaces", "org.test.namespace.1", 0],
+          code: "custom",
+        }),
+      );
+    });
 
-      it("should return false when digestID is not an integer", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 1.5,
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "digestID"],
-            code: "invalid_type",
-          }),
-        );
-      });
-
-      it("should return false when digestID is negative", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: -1,
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "digestID"],
-            code: "too_small",
-          }),
-        );
-      });
-
-      it("should return false when digestID is >= 2^31", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 2 ** 31,
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "digestID"],
-            code: "too_big",
-          }),
-        );
-      });
-
-      it("should return false when elementIdentifier is missing", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 1,
-                elementValue: "test_value",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: [
-              "nameSpaces",
-              "org.test.namespace.1",
-              0,
-              "elementIdentifier",
-            ],
-            code: "invalid_type",
-          }),
-        );
-      });
-
-      it("should return false when random is missing", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
+    it("should return false when an item is a Tag with wrong tag number", () => {
+      const data = {
+        ...validData,
+        nameSpaces: {
+          "org.test.namespace.1": [
+            new Tag(
+              99,
+              encode({
                 digestID: 1,
                 elementIdentifier: "test_element",
                 elementValue: "test_value",
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "random"],
-            code: "custom",
-          }),
-        );
-      });
-
-      it("should return false when random is not a Uint8Array", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 1,
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
-                random: "not-bytes",
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "random"],
-            code: "custom",
-          }),
-        );
-      });
-
-      it("should return false when random is fewer than 16 bytes", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 1,
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
-                random: new Uint8Array(15),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "random"],
-            message: "random must be at least 16 bytes",
-          }),
-        );
-      });
-
-      it("should return false when it contains additional properties", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                ...validItem,
-                extra: "not allowed",
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0],
-            code: "unrecognized_keys",
-          }),
-        );
-      });
-
-      it("should return false when digestID is not a number", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: "not-a-number",
-                elementIdentifier: "test_element",
-                elementValue: "test_value",
                 random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
+              }),
+            ),
+          ],
+        },
+      };
 
-        const result = issuerSignedSchema.safeParse(data);
+      const result = issuerSignedSchema.safeParse(data);
 
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "digestID"],
-            code: "invalid_type",
-          }),
-        );
-      });
-
-      it("should return false when elementIdentifier is not a string", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 1,
-                elementIdentifier: 123,
-                elementValue: "test_value",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: [
-              "nameSpaces",
-              "org.test.namespace.1",
-              0,
-              "elementIdentifier",
-            ],
-            code: "invalid_type",
-          }),
-        );
-      });
-
-      it("should return false when elementValue is missing", () => {
-        const data = {
-          ...validData,
-          nameSpaces: {
-            "org.test.namespace.1": [
-              {
-                digestID: 1,
-                elementIdentifier: "test_element",
-                random: new Uint8Array(16),
-              },
-            ],
-          },
-        };
-
-        const result = issuerSignedSchema.safeParse(data);
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toContainEqual(
-          expect.objectContaining({
-            path: ["nameSpaces", "org.test.namespace.1", 0, "elementValue"],
-            message: "elementValue is required",
-          }),
-        );
-      });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["nameSpaces", "org.test.namespace.1", 0],
+          message: "must be tagged with 24 (encoded CBOR data)",
+        }),
+      );
     });
   });
 
@@ -484,7 +234,7 @@ describe("issuerSignedSchema", () => {
           expect.objectContaining({
             path: ["issuerAuth", 0],
             code: "custom",
-            message: "must be instance of Uint8Array",
+            message: "Input not instance of Uint8Array",
           }),
         );
       });
@@ -527,7 +277,7 @@ describe("issuerSignedSchema", () => {
           expect.objectContaining({
             path: ["issuerAuth", 2],
             code: "custom",
-            message: "must be instance of Uint8Array",
+            message: "Input not instance of Uint8Array",
           }),
         );
       });
@@ -552,16 +302,240 @@ describe("issuerSignedSchema", () => {
           expect.objectContaining({
             path: ["issuerAuth", 3],
             code: "custom",
-            message: "must be instance of Uint8Array",
+            message: "Input not instance of Uint8Array",
           }),
         );
       });
     });
   });
+});
+
+describe("issuerSignedItemSchema", () => {
+  const validItem = {
+    digestID: 1,
+    elementIdentifier: "test_element",
+    elementValue: "test_value",
+    random: new Uint8Array(16),
+  };
 
   it("should return true when data is valid", () => {
-    const result = issuerSignedSchema.safeParse(validData);
+    const result = issuerSignedItemSchema.safeParse(validItem);
 
     expect(result.success).toBe(true);
+  });
+
+  it("should return false when it contains additional properties", () => {
+    const data = {
+      ...validItem,
+      extra: "not allowed",
+    };
+
+    const result = issuerSignedItemSchema.safeParse(data);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toContainEqual(
+      expect.objectContaining({
+        code: "unrecognized_keys",
+      }),
+    );
+  });
+
+  describe("digestID", () => {
+    it("should return false when it is missing", () => {
+      const data = {
+        elementIdentifier: "test_element",
+        elementValue: "test_value",
+        random: new Uint8Array(16),
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["digestID"],
+          code: "invalid_type",
+        }),
+      );
+    });
+
+    it("should return false when it is not a number", () => {
+      const data = {
+        ...validItem,
+        digestID: "not-a-number",
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["digestID"],
+          code: "invalid_type",
+        }),
+      );
+    });
+
+    it("should return false when it is not an integer", () => {
+      const data = {
+        ...validItem,
+        digestID: 1.5,
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["digestID"],
+          code: "invalid_type",
+        }),
+      );
+    });
+
+    it("should return false when it is negative", () => {
+      const data = {
+        ...validItem,
+        digestID: -1,
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["digestID"],
+          code: "too_small",
+        }),
+      );
+    });
+
+    it("should return false when it is >= 2^31", () => {
+      const data = {
+        ...validItem,
+        digestID: 2 ** 31,
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["digestID"],
+          code: "too_big",
+        }),
+      );
+    });
+  });
+
+  describe("elementIdentifier", () => {
+    it("should return false when it is missing", () => {
+      const data = {
+        digestID: 1,
+        elementValue: "test_value",
+        random: new Uint8Array(16),
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["elementIdentifier"],
+          code: "invalid_type",
+        }),
+      );
+    });
+
+    it("should return false when it is not a string", () => {
+      const data = {
+        ...validItem,
+        elementIdentifier: 123,
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["elementIdentifier"],
+          code: "invalid_type",
+        }),
+      );
+    });
+  });
+
+  describe("elementValue", () => {
+    it("should return false when it is missing", () => {
+      const data = {
+        digestID: 1,
+        elementIdentifier: "test_element",
+        random: new Uint8Array(16),
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["elementValue"],
+          message: "elementValue is required",
+        }),
+      );
+    });
+  });
+
+  describe("random", () => {
+    it("should return false when it is missing", () => {
+      const data = {
+        digestID: 1,
+        elementIdentifier: "test_element",
+        elementValue: "test_value",
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["random"],
+          code: "custom",
+        }),
+      );
+    });
+
+    it("should return false when it is not a Uint8Array", () => {
+      const data = {
+        ...validItem,
+        random: "not-bytes",
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["random"],
+          code: "custom",
+        }),
+      );
+    });
+
+    it("should return false when it is fewer than 16 bytes", () => {
+      const data = {
+        ...validItem,
+        random: new Uint8Array(15),
+      };
+
+      const result = issuerSignedItemSchema.safeParse(data);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["random"],
+          message: "random must be at least 16 bytes",
+        }),
+      );
+    });
   });
 });
