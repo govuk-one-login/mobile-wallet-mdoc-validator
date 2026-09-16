@@ -1,6 +1,5 @@
 import { decode, encode } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
-import { ZodError } from "zod";
 import {
   MobileSecurityObject,
   ValidityInfo,
@@ -9,6 +8,7 @@ import {
   mobileSecurityObjectSchema,
 } from "./schemas/mobileSecurityObjectSchema";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
+import { parseSchema } from "./parseSchema";
 import {
   IssuerAuth,
   issuerSignedItemSchema,
@@ -113,21 +113,7 @@ async function validatePayload(payload: Uint8Array, nameSpaces: NameSpaces) {
 }
 
 function validateMobileSecurityObject(data: unknown): MobileSecurityObject {
-  try {
-    return mobileSecurityObjectSchema.parse(data);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const errorDetails = error.issues
-        .map((issue) => `${issue.path.join("/") || "root"}: ${issue.message}`)
-        .join("; ");
-
-      throw new MdocValidationError(
-        `MobileSecurityObject does not comply with schema - ${errorDetails}`,
-        "INVALID_SCHEMA",
-      );
-    }
-    throw error;
-  }
+  return parseSchema(mobileSecurityObjectSchema, data, "MobileSecurityObject");
 }
 
 function validateDigests(

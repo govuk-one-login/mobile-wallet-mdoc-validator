@@ -1,11 +1,11 @@
 import { decode, Tag } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
-import { ZodError } from "zod";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
+import { parseSchema } from "./parseSchema";
 import { validateDigestIds } from "./validateDigestIds";
 
 /**
@@ -17,7 +17,11 @@ import { validateDigestIds } from "./validateDigestIds";
 export async function validateMdoc(credential: string): Promise<boolean> {
   const cborBytes = base64UrlToUint8Array(credential);
 
-  const issuerSigned = validateIssuerSignedSchema(decodeCbor(cborBytes));
+  const issuerSigned = parseSchema(
+    issuerSignedSchema,
+    decodeCbor(cborBytes),
+    "IssuerSigned",
+  );
 
   validateDigestIds(issuerSigned.nameSpaces);
 
@@ -59,23 +63,5 @@ function decodeCbor(credential: Uint8Array): unknown {
       `Failed to decode CBOR encoded credential - ${errorMessage(error)}`,
       "INVALID_CBOR",
     );
-  }
-}
-
-function validateIssuerSignedSchema(data: unknown) {
-  try {
-    return issuerSignedSchema.parse(data);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const errorDetails = error.issues
-        .map((issue) => `${issue.path.join("/") || "root"}: ${issue.message}`)
-        .join("; ");
-
-      throw new MdocValidationError(
-        `IssuerSigned does not comply with schema - ${errorDetails}`,
-        "INVALID_SCHEMA",
-      );
-    }
-    throw error;
   }
 }

@@ -151,10 +151,11 @@ describe("validateMdoc", () => {
       ];
 
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
-        .mockImplementation(() => {
-          throw new ZodError(zodIssues);
-        });
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "safeParse")
+        .mockReturnValue({
+          success: false,
+          error: new ZodError(zodIssues),
+        } as never);
 
       const credential = new TestMdocBuilder().build();
 
@@ -181,10 +182,11 @@ describe("validateMdoc", () => {
       ];
 
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
-        .mockImplementation(() => {
-          throw new ZodError(zodIssues);
-        });
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "safeParse")
+        .mockReturnValue({
+          success: false,
+          error: new ZodError(zodIssues),
+        } as never);
 
       const credential = new TestMdocBuilder().build();
 
@@ -211,10 +213,11 @@ describe("validateMdoc", () => {
       ];
 
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
-        .mockImplementation(() => {
-          throw new ZodError(zodIssues);
-        });
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "safeParse")
+        .mockReturnValue({
+          success: false,
+          error: new ZodError(zodIssues),
+        } as never);
 
       const credential = new TestMdocBuilder().build();
 
@@ -231,10 +234,11 @@ describe("validateMdoc", () => {
 
     it("should throw MdocValidationError with empty error details when issues array is empty", async () => {
       jest
-        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
-        .mockImplementation(() => {
-          throw new ZodError([]);
-        });
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "safeParse")
+        .mockReturnValue({
+          success: false,
+          error: new ZodError([]),
+        } as never);
 
       const credential = new TestMdocBuilder().build();
 
@@ -460,11 +464,12 @@ h6XK6xERRLkY5jjINTt8TkU=
         jest
           .spyOn(
             mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
-            "parse",
+            "safeParse",
           )
-          .mockImplementation(() => {
-            throw new ZodError(zodIssues);
-          });
+          .mockReturnValue({
+            success: false,
+            error: new ZodError(zodIssues),
+          } as never);
 
         const credential = new TestMdocBuilder().build();
 
@@ -493,11 +498,12 @@ h6XK6xERRLkY5jjINTt8TkU=
         jest
           .spyOn(
             mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
-            "parse",
+            "safeParse",
           )
-          .mockImplementation(() => {
-            throw new ZodError(zodIssues);
-          });
+          .mockReturnValue({
+            success: false,
+            error: new ZodError(zodIssues),
+          } as never);
 
         const credential = new TestMdocBuilder().build();
 
@@ -526,11 +532,12 @@ h6XK6xERRLkY5jjINTt8TkU=
         jest
           .spyOn(
             mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
-            "parse",
+            "safeParse",
           )
-          .mockImplementation(() => {
-            throw new ZodError(zodIssues);
-          });
+          .mockReturnValue({
+            success: false,
+            error: new ZodError(zodIssues),
+          } as never);
 
         const credential = new TestMdocBuilder().build();
 
@@ -549,11 +556,12 @@ h6XK6xERRLkY5jjINTt8TkU=
         jest
           .spyOn(
             mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
-            "parse",
+            "safeParse",
           )
-          .mockImplementation(() => {
-            throw new ZodError([]);
-          });
+          .mockReturnValue({
+            success: false,
+            error: new ZodError([]),
+          } as never);
 
         const credential = new TestMdocBuilder().build();
 
