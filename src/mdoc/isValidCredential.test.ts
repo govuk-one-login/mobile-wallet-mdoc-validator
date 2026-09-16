@@ -3,9 +3,10 @@ import { TestMdocBuilder } from "./TestMdocBuilder";
 import { MdocValidationError } from "./MdocValidationError";
 import { Tag } from "cbor2";
 import { base64url } from "jose";
-import * as ajvModule from "../ajv/ajvInstance";
 import { X509Certificate } from "node:crypto";
-import { ErrorObject, ValidateFunction } from "ajv";
+import { ZodError, type ZodIssue } from "zod";
+import * as issuerSignedSchemaModule from "./schemas/issuerSignedSchema";
+import * as mobileSecurityObjectSchemaModule from "./schemas/mobileSecurityObjectSchema";
 
 describe("isValidCredential", () => {
   beforeEach(() => {
@@ -14,7 +15,6 @@ describe("isValidCredential", () => {
 
   afterEach(() => {
     jest.useRealTimers();
-    ajvModule.resetAjvInstance();
     jest.restoreAllMocks();
   });
 
@@ -141,26 +141,22 @@ describe("isValidCredential", () => {
   });
 
   describe("IssuerSigned Schema", () => {
-    it("should throw MdocValidationError with AJV error", async () => {
-      const mockValidator = jest
-        .fn()
-        .mockReturnValue(false) as unknown as ValidateFunction;
-      mockValidator.errors = [
+    it("should throw MdocValidationError with validation error including path", async () => {
+      const zodIssues: ZodIssue[] = [
         {
-          instancePath: "/path",
+          code: "invalid_type",
+          path: ["path"],
           message: "must be a string",
-          data: 123,
-          keyword: "key",
-        } as unknown as ErrorObject,
+          expected: "string",
+          received: "number",
+        },
       ];
 
-      const mockAjv = {
-        getSchema: jest.fn().mockReturnValue(undefined),
-        addSchema: jest.fn().mockReturnThis(),
-        compile: jest.fn().mockReturnValue(mockValidator),
-      };
-
-      jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
+      jest
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .mockImplementation(() => {
+          throw new ZodError(zodIssues);
+        });
 
       const credential = new TestMdocBuilder().build();
 
@@ -170,31 +166,27 @@ describe("isValidCredential", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
-          "IssuerSigned does not comply with schema - /path: must be a string",
+          "IssuerSigned does not comply with schema - path: must be a string",
         );
       }
     });
 
-    it("should throw MdocValidationError and default path to 'root' when instancePath is missing", async () => {
-      const mockValidator = jest
-        .fn()
-        .mockReturnValue(false) as unknown as ValidateFunction;
-      mockValidator.errors = [
+    it("should throw MdocValidationError and default path to 'root' when path is empty", async () => {
+      const zodIssues: ZodIssue[] = [
         {
-          instancePath: "",
+          code: "invalid_type",
+          path: [],
           message: "must be a string",
-          data: 123,
-          keyword: "key",
-        } as unknown as ErrorObject,
+          expected: "string",
+          received: "number",
+        },
       ];
 
-      const mockAjv = {
-        getSchema: jest.fn().mockReturnValue(undefined),
-        addSchema: jest.fn().mockReturnThis(),
-        compile: jest.fn().mockReturnValue(mockValidator),
-      };
-
-      jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
+      jest
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .mockImplementation(() => {
+          throw new ZodError(zodIssues);
+        });
 
       const credential = new TestMdocBuilder().build();
 
@@ -209,26 +201,22 @@ describe("isValidCredential", () => {
       }
     });
 
-    it("should throw MdocValidationError and default message to 'Unknown validation error' when message is missing", async () => {
-      const mockValidator = jest
-        .fn()
-        .mockReturnValue(false) as unknown as ValidateFunction;
-      mockValidator.errors = [
+    it("should throw MdocValidationError with Zod validation message", async () => {
+      const zodIssues: ZodIssue[] = [
         {
-          instancePath: "/path",
-          message: undefined,
-          data: 123,
-          keyword: "key",
-        } as unknown as ErrorObject,
+          code: "invalid_type",
+          path: ["path"],
+          message: "Expected string, received number",
+          expected: "string",
+          received: "number",
+        },
       ];
 
-      const mockAjv = {
-        getSchema: jest.fn().mockReturnValue(undefined),
-        addSchema: jest.fn().mockReturnThis(),
-        compile: jest.fn().mockReturnValue(mockValidator),
-      };
-
-      jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
+      jest
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .mockImplementation(() => {
+          throw new ZodError(zodIssues);
+        });
 
       const credential = new TestMdocBuilder().build();
 
@@ -238,24 +226,17 @@ describe("isValidCredential", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
-          "IssuerSigned does not comply with schema - /path: Unknown validation error",
+          "IssuerSigned does not comply with schema - path: Expected string, received number",
         );
       }
     });
 
-    it("should throw MdocValidationError with empty error details when validator.errors is undefined", async () => {
-      const mockValidator = jest
-        .fn()
-        .mockReturnValue(false) as unknown as ValidateFunction;
-      mockValidator.errors = null;
-
-      const mockAjv = {
-        getSchema: jest.fn().mockReturnValue(undefined),
-        addSchema: jest.fn().mockReturnThis(),
-        compile: jest.fn().mockReturnValue(mockValidator),
-      };
-
-      jest.spyOn(ajvModule, "getAjvInstance").mockReturnValue(mockAjv as never);
+    it("should throw MdocValidationError with empty error details when issues array is empty", async () => {
+      jest
+        .spyOn(issuerSignedSchemaModule.issuerSignedSchema, "parse")
+        .mockImplementation(() => {
+          throw new ZodError([]);
+        });
 
       const credential = new TestMdocBuilder().build();
 
@@ -467,29 +448,25 @@ h6XK6xERRLkY5jjINTt8TkU=
     });
 
     describe("MSO Schema", () => {
-      it("should should throw MdocValidationError for MSO with AJV error", async () => {
-        const mockValidator = jest
-          .fn()
-          .mockReturnValueOnce(true) // first call IssuerSigned (valid)
-          .mockReturnValueOnce(false) as unknown as ValidateFunction; // second call MSO (invalid)
-        mockValidator.errors = [
+      it("should throw MdocValidationError for MSO with validation error including path", async () => {
+        const zodIssues: ZodIssue[] = [
           {
-            instancePath: "/path",
+            code: "invalid_type",
+            path: ["path"],
             message: "must be a string",
-            data: 123,
-            keyword: "key",
-          } as unknown as ErrorObject,
+            expected: "string",
+            received: "number",
+          },
         ];
 
-        const mockAjv = {
-          getSchema: jest.fn().mockReturnValue(undefined),
-          addSchema: jest.fn().mockReturnThis(),
-          compile: jest.fn().mockReturnValue(mockValidator),
-        };
-
         jest
-          .spyOn(ajvModule, "getAjvInstance")
-          .mockReturnValue(mockAjv as never);
+          .spyOn(
+            mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
+            "parse",
+          )
+          .mockImplementation(() => {
+            throw new ZodError(zodIssues);
+          });
 
         const credential = new TestMdocBuilder().build();
 
@@ -499,34 +476,30 @@ h6XK6xERRLkY5jjINTt8TkU=
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
-            "MobileSecurityObject does not comply with schema - /path: must be a string",
+            "MobileSecurityObject does not comply with schema - path: must be a string",
           );
         }
       });
 
-      it("should should throw MdocValidationError and default path to 'root' when instancePath is missing", async () => {
-        const mockValidator = jest
-          .fn()
-          .mockReturnValueOnce(true) // first call IssuerSigned (valid)
-          .mockReturnValueOnce(false) as unknown as ValidateFunction; // second call MSO (invalid)
-        mockValidator.errors = [
+      it("should throw MdocValidationError and default path to 'root' when path is empty", async () => {
+        const zodIssues: ZodIssue[] = [
           {
-            instancePath: "",
+            code: "invalid_type",
+            path: [],
             message: "must be a string",
-            data: 123,
-            keyword: "key",
-          } as unknown as ErrorObject,
+            expected: "string",
+            received: "number",
+          },
         ];
 
-        const mockAjv = {
-          getSchema: jest.fn().mockReturnValue(undefined),
-          addSchema: jest.fn().mockReturnThis(),
-          compile: jest.fn().mockReturnValue(mockValidator),
-        };
-
         jest
-          .spyOn(ajvModule, "getAjvInstance")
-          .mockReturnValue(mockAjv as never);
+          .spyOn(
+            mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
+            "parse",
+          )
+          .mockImplementation(() => {
+            throw new ZodError(zodIssues);
+          });
 
         const credential = new TestMdocBuilder().build();
 
@@ -541,29 +514,25 @@ h6XK6xERRLkY5jjINTt8TkU=
         }
       });
 
-      it("should throw MdocValidationError and default to 'Unknown validation error' when message is missing", async () => {
-        const mockValidator = jest
-          .fn()
-          .mockReturnValueOnce(true) // first call IssuerSigned (valid)
-          .mockReturnValueOnce(false) as unknown as ValidateFunction; // second call MSO (invalid)
-        mockValidator.errors = [
+      it("should throw MdocValidationError with Zod validation message", async () => {
+        const zodIssues: ZodIssue[] = [
           {
-            instancePath: "/path",
-            message: undefined,
-            data: 123,
-            keyword: "key",
-          } as unknown as ErrorObject,
+            code: "invalid_type",
+            path: ["path"],
+            message: "Expected string, received number",
+            expected: "string",
+            received: "number",
+          },
         ];
 
-        const mockAjv = {
-          getSchema: jest.fn().mockReturnValue(undefined),
-          addSchema: jest.fn().mockReturnThis(),
-          compile: jest.fn().mockReturnValue(mockValidator),
-        };
-
         jest
-          .spyOn(ajvModule, "getAjvInstance")
-          .mockReturnValue(mockAjv as never);
+          .spyOn(
+            mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
+            "parse",
+          )
+          .mockImplementation(() => {
+            throw new ZodError(zodIssues);
+          });
 
         const credential = new TestMdocBuilder().build();
 
@@ -573,27 +542,20 @@ h6XK6xERRLkY5jjINTt8TkU=
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
-            "MobileSecurityObject does not comply with schema - /path: Unknown validation error",
+            "MobileSecurityObject does not comply with schema - path: Expected string, received number",
           );
         }
       });
 
-      it("should throw MdocValidationError with empty error details when validator.errors is undefined", async () => {
-        const mockValidator = jest
-          .fn()
-          .mockReturnValueOnce(true) // first call IssuerSigned (valid)
-          .mockReturnValueOnce(false) as unknown as ValidateFunction; // second call MSO (invalid)
-        mockValidator.errors = null;
-
-        const mockAjv = {
-          getSchema: jest.fn().mockReturnValue(undefined),
-          addSchema: jest.fn().mockReturnThis(),
-          compile: jest.fn().mockReturnValue(mockValidator),
-        };
-
+      it("should throw MdocValidationError with empty error details when issues array is empty", async () => {
         jest
-          .spyOn(ajvModule, "getAjvInstance")
-          .mockReturnValue(mockAjv as never);
+          .spyOn(
+            mobileSecurityObjectSchemaModule.mobileSecurityObjectSchema,
+            "parse",
+          )
+          .mockImplementation(() => {
+            throw new ZodError([]);
+          });
 
         const credential = new TestMdocBuilder().build();
 

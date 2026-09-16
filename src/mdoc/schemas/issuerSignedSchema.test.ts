@@ -1,11 +1,6 @@
-import { getAjvInstance } from "../../ajv/ajvInstance";
 import { issuerSignedSchema } from "./issuerSignedSchema";
 
 describe("issuerSignedSchema", () => {
-  const ajv = getAjvInstance();
-
-  const validate = ajv.compile(issuerSignedSchema);
-
   const validData = {
     nameSpaces: {
       "org.test.namespace.1": [new Uint8Array()],
@@ -16,7 +11,7 @@ describe("issuerSignedSchema", () => {
       new Map(),
       new Uint8Array(),
       new Uint8Array(),
-    ],
+    ] as const,
   };
 
   it("should return false when it contains additional properties", () => {
@@ -25,43 +20,45 @@ describe("issuerSignedSchema", () => {
       extra: "not allowed",
     };
 
-    const isValid = validate(data);
+    const result = issuerSignedSchema.safeParse(data);
 
-    expect(isValid).toBe(false);
-    expect(validate.errors).toContainEqual(
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toContainEqual(
       expect.objectContaining({
-        instancePath: "",
-        message: "must NOT have additional properties",
+        code: "unrecognized_keys",
+        message: "Unrecognized key(s) in object: 'extra'",
       }),
     );
   });
 
   it("should return false when nameSpaces is missing", () => {
-    const data: Record<string, unknown> = { ...validData };
-    delete data.nameSpaces;
+    const data = {
+      issuerAuth: validData.issuerAuth,
+    };
 
-    const isValid = validate(data);
+    const result = issuerSignedSchema.safeParse(data);
 
-    expect(isValid).toBe(false);
-    expect(validate.errors).toContainEqual(
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toContainEqual(
       expect.objectContaining({
-        instancePath: "",
-        message: "must have required property 'nameSpaces'",
+        path: ["nameSpaces"],
+        code: "invalid_type",
       }),
     );
   });
 
   it("should return false when issuerAuth is missing", () => {
-    const data: Record<string, unknown> = { ...validData };
-    delete data.issuerAuth;
+    const data = {
+      nameSpaces: validData.nameSpaces,
+    };
 
-    const isValid = validate(data);
+    const result = issuerSignedSchema.safeParse(data);
 
-    expect(isValid).toBe(false);
-    expect(validate.errors).toContainEqual(
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toContainEqual(
       expect.objectContaining({
-        instancePath: "",
-        message: "must have required property 'issuerAuth'",
+        path: ["issuerAuth"],
+        code: "invalid_type",
       }),
     );
   });
@@ -70,12 +67,12 @@ describe("issuerSignedSchema", () => {
     it("should return false when it is empty", () => {
       const data = { ...validData, nameSpaces: {} };
 
-      const isValid = validate(data);
+      const result = issuerSignedSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/nameSpaces",
+          path: ["nameSpaces"],
           message: "must NOT have fewer than 1 properties",
         }),
       );
@@ -89,12 +86,13 @@ describe("issuerSignedSchema", () => {
         },
       };
 
-      const isValid = validate(data);
+      const result = issuerSignedSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/nameSpaces/org.test.namespace.1",
+          path: ["nameSpaces", "org.test.namespace.1"],
+          code: "too_small",
           message: "must NOT have fewer than 1 items",
         }),
       );
@@ -108,13 +106,13 @@ describe("issuerSignedSchema", () => {
         issuerAuth: [new Uint8Array(), new Map(), new Uint8Array()],
       };
 
-      const isValid = validate(data);
+      const result = issuerSignedSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/issuerAuth",
-          message: "must NOT have fewer than 4 items",
+          path: ["issuerAuth"],
+          code: "too_small",
         }),
       );
     });
@@ -131,13 +129,13 @@ describe("issuerSignedSchema", () => {
         ],
       };
 
-      const isValid = validate(data);
+      const result = issuerSignedSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/issuerAuth",
-          message: "must NOT have more than 4 items",
+          path: ["issuerAuth"],
+          code: "too_big",
         }),
       );
     });
@@ -151,15 +149,16 @@ describe("issuerSignedSchema", () => {
             new Map(),
             new Uint8Array(),
             new Uint8Array(),
-          ],
+          ] as const,
         };
 
-        const isValid = validate(data);
+        const result = issuerSignedSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/issuerAuth/0",
+            path: ["issuerAuth", 0],
+            code: "custom",
             message: "must be instance of Uint8Array",
           }),
         );
@@ -175,12 +174,12 @@ describe("issuerSignedSchema", () => {
             new Uint8Array(), // unprotected header
             new Uint8Array(),
             new Uint8Array(),
-          ],
+          ] as const,
         };
 
-        const isValid = validate(data);
+        const result = issuerSignedSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
+        expect(result.success).toBe(false);
       });
     });
 
@@ -193,15 +192,16 @@ describe("issuerSignedSchema", () => {
             new Map(),
             new Map(), // payload
             new Uint8Array(),
-          ],
+          ] as const,
         };
 
-        const isValid = validate(data);
+        const result = issuerSignedSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/issuerAuth/2",
+            path: ["issuerAuth", 2],
+            code: "custom",
             message: "must be instance of Uint8Array",
           }),
         );
@@ -217,15 +217,16 @@ describe("issuerSignedSchema", () => {
             new Map(),
             new Uint8Array(),
             new Map(), // signature
-          ],
+          ] as const,
         };
 
-        const isValid = validate(data);
+        const result = issuerSignedSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/issuerAuth/3",
+            path: ["issuerAuth", 3],
+            code: "custom",
             message: "must be instance of Uint8Array",
           }),
         );
@@ -234,8 +235,8 @@ describe("issuerSignedSchema", () => {
   });
 
   it("should return true when data is valid", () => {
-    const isValid = validate(validData);
+    const result = issuerSignedSchema.safeParse(validData);
 
-    expect(isValid).toBe(true);
+    expect(result.success).toBe(true);
   });
 });

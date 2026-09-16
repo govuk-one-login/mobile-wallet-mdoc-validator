@@ -1,88 +1,49 @@
-export const mobileSecurityObjectSchema = {
-  $id: "mobile-security-object",
-  type: "object",
-  required: [
-    "version",
-    "digestAlgorithm",
-    "deviceKeyInfo",
-    "valueDigests",
-    "docType",
-    "validityInfo",
-    "status",
-  ],
-  additionalProperties: false,
-  properties: {
-    version: {
-      type: "string",
-      enum: ["1.0"],
-    },
-    digestAlgorithm: {
-      type: "string",
-      enum: ["SHA-256"],
-    },
-    deviceKeyInfo: {
-      type: "object",
-      required: ["deviceKey", "keyAuthorizations"],
-      additionalProperties: false,
-      properties: {
-        deviceKey: {
-          type: "object",
-          instanceofMap: true,
-        },
-        keyAuthorizations: {
-          type: "object",
-          required: ["nameSpaces"],
-          additionalProperties: false,
-          properties: {
-            nameSpaces: {
-              type: "array",
-              minItems: 1,
-              uniqueItems: true,
-              items: {
-                type: "string",
-              },
-            },
-          },
-        },
-      },
-    },
-    valueDigests: {
-      type: "object",
-      minProperties: 1,
-      additionalProperties: {
-        type: "object",
-        instanceofMap: true,
-      },
-    },
-    docType: {
-      type: "string",
-    },
-    validityInfo: {
-      type: "object",
-      required: ["signed", "validFrom", "validUntil"],
-      properties: {
-        signed: { type: "string", format: "date-time" },
-        validFrom: { type: "string", format: "date-time" },
-        validUntil: { type: "string", format: "date-time" },
-        expectedUpdate: { type: "string", format: "date-time" },
-      },
-      additionalProperties: false,
-    },
-    status: {
-      type: "object",
-      required: ["status_list"],
-      properties: {
-        status_list: {
-          type: "object",
-          required: ["idx", "uri"],
-          properties: {
-            idx: { type: "number" },
-            uri: { type: "string", format: "uri" },
-          },
-          additionalProperties: false,
-        },
-      },
-      additionalProperties: false,
-    },
-  },
-};
+import { z } from "zod";
+
+const dateTimeString = z.string().datetime();
+
+export const mobileSecurityObjectSchema = z
+  .object({
+    version: z.literal("1.0"),
+    digestAlgorithm: z.literal("SHA-256"),
+    deviceKeyInfo: z
+      .object({
+        deviceKey: z.instanceof(Map),
+        keyAuthorizations: z
+          .object({
+            nameSpaces: z
+              .array(z.string())
+              .min(1)
+              .refine((items) => new Set(items).size === items.length, {
+                message: "must NOT have duplicate items",
+              }),
+          })
+          .strict(),
+      })
+      .strict(),
+    valueDigests: z
+      .record(z.instanceof(Map))
+      .refine((obj) => Object.keys(obj).length > 0, {
+        message: "must NOT have fewer than 1 properties",
+      }),
+    docType: z.string(),
+    validityInfo: z
+      .object({
+        signed: dateTimeString,
+        validFrom: dateTimeString,
+        validUntil: dateTimeString,
+        expectedUpdate: dateTimeString.optional(),
+      })
+      .strict(),
+    status: z
+      .object({
+        status_list: z
+          .object({
+            idx: z.number(),
+            uri: z.string().url(),
+          })
+          .strict(),
+      })
+      .strict(),
+  })
+  .strict();

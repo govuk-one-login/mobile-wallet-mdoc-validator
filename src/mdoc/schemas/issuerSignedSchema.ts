@@ -1,44 +1,17 @@
-export const issuerSignedSchema = {
-  $id: "issuer-signed",
-  type: "object",
-  required: ["nameSpaces", "issuerAuth"],
-  properties: {
-    nameSpaces: {
-      type: "object",
-      minProperties: 1,
-      additionalProperties: {
-        type: "array",
-        minItems: 1,
-      },
-    },
-    issuerAuth: {
-      type: "array",
-      items: [
-        {
-          type: "object",
-          instanceofUint8Array: true,
-          description: "Protected header",
-        },
-        {
-          type: "object",
-          instanceofMap: true,
-          description: "Unprotected header",
-        },
-        {
-          type: "object",
-          instanceofUint8Array: true,
-          description: "Payload",
-        },
-        {
-          type: "object",
-          instanceofUint8Array: true,
-          description: "Signature",
-        },
-      ],
-      minItems: 4,
-      maxItems: 4,
-      additionalItems: false,
-    },
-  },
-  additionalProperties: false,
-};
+import { z } from "zod";
+
+export const issuerSignedSchema = z
+  .object({
+    nameSpaces: z
+      .record(z.array(z.unknown()).min(1, "must NOT have fewer than 1 items"))
+      .refine((obj) => Object.keys(obj).length > 0, {
+        message: "must NOT have fewer than 1 properties",
+      }),
+    issuerAuth: z.tuple([
+      z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
+      z.instanceof(Map, { message: "must be instance of Map" }),
+      z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
+      z.instanceof(Uint8Array, { message: "must be instance of Uint8Array" }),
+    ]),
+  })
+  .strict();

@@ -1,29 +1,22 @@
-import { getAjvInstance } from "../ajv/ajvInstance";
+import { ZodError } from "zod";
 import { IssuerSigned } from "./types/issuerSigned";
 import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { MdocValidationError } from "./MdocValidationError";
 
 export function validateIssuerSignedSchema(issuerSigned: IssuerSigned): void {
-  const ajv = getAjvInstance();
+  try {
+    issuerSignedSchema.parse(issuerSigned);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const errorDetails = error.issues
+        .map((issue) => `${issue.path.join("/") || "root"}: ${issue.message}`)
+        .join("; ");
 
-  const validator = ajv.compile(issuerSignedSchema);
-
-  if (!validator(issuerSigned)) {
-    const errors =
-      validator.errors?.map((error) => ({
-        path: error.instancePath || "root",
-        message: error.message || "Unknown validation error",
-        value: error.data,
-        keyword: error.keyword,
-      })) || [];
-
-    const errorDetails = errors
-      .map((err) => `${err.path}: ${err.message}`)
-      .join("; ");
-
-    throw new MdocValidationError(
-      `IssuerSigned does not comply with schema - ${errorDetails}`,
-      "INVALID_SCHEMA",
-    );
+      throw new MdocValidationError(
+        `IssuerSigned does not comply with schema - ${errorDetails}`,
+        "INVALID_SCHEMA",
+      );
+    }
+    throw error;
   }
 }

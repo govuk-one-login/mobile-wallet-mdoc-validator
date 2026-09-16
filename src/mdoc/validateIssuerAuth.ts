@@ -1,6 +1,6 @@
 import { decode, encode, Tag, type TagDecoderMap } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
-import { getAjvInstance } from "../ajv/ajvInstance";
+import { ZodError } from "zod";
 import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema";
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
@@ -124,27 +124,20 @@ async function validatePayload(
 function validateMobileSecurityObject(
   mobileSecurityObject: MobileSecurityObject,
 ): void {
-  const ajv = getAjvInstance();
+  try {
+    mobileSecurityObjectSchema.parse(mobileSecurityObject);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const errorDetails = error.issues
+        .map((issue) => `${issue.path.join("/") || "root"}: ${issue.message}`)
+        .join("; ");
 
-  const validator = ajv.compile(mobileSecurityObjectSchema);
-
-  if (!validator(mobileSecurityObject)) {
-    const errors =
-      validator.errors?.map((error) => ({
-        path: error.instancePath || "root",
-        message: error.message || "Unknown validation error",
-        value: error.data,
-        keyword: error.keyword,
-      })) || [];
-
-    const errorDetails = errors
-      .map((err) => `${err.path}: ${err.message}`)
-      .join("; ");
-
-    throw new MdocValidationError(
-      `MobileSecurityObject does not comply with schema - ${errorDetails}`,
-      "INVALID_SCHEMA",
-    );
+      throw new MdocValidationError(
+        `MobileSecurityObject does not comply with schema - ${errorDetails}`,
+        "INVALID_SCHEMA",
+      );
+    }
+    throw error;
   }
 }
 

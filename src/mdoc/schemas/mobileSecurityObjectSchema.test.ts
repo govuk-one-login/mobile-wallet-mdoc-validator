@@ -1,11 +1,7 @@
-import { getAjvInstance } from "../../ajv/ajvInstance";
 import { mobileSecurityObjectSchema } from "./mobileSecurityObjectSchema";
 import { MobileSecurityObject } from "../types/mobileSecurityObject";
 
 describe("mobileSecurityObjectSchema", () => {
-  const ajv = getAjvInstance();
-  const validate = ajv.compile(mobileSecurityObjectSchema);
-
   const validData: MobileSecurityObject = {
     version: "1.0",
     digestAlgorithm: "SHA-256",
@@ -37,54 +33,202 @@ describe("mobileSecurityObjectSchema", () => {
   it("should return false when it contains additional properties", () => {
     const data = { ...validData, extra: "not allowed" };
 
-    const isValid = validate(data);
+    const result = mobileSecurityObjectSchema.safeParse(data);
 
-    expect(isValid).toBe(false);
-    expect(validate.errors).toContainEqual(
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toContainEqual(
       expect.objectContaining({
-        instancePath: "",
-        params: { additionalProperty: "extra" },
-        message: "must NOT have additional properties",
+        code: "unrecognized_keys",
+        message: "Unrecognized key(s) in object: 'extra'",
       }),
     );
   });
 
   it.each([
-    "version",
-    "digestAlgorithm",
-    "deviceKeyInfo",
-    "valueDigests",
-    "docType",
-    "validityInfo",
-    "status",
-  ])("should return false when %s is missing", (field) => {
-    const data: Record<string, unknown> = { ...validData };
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete data[field];
+    {
+      field: "version",
+      data: {
+        digestAlgorithm: "SHA-256" as const,
+        deviceKeyInfo: {
+          deviceKey: new Map(),
+          keyAuthorizations: {
+            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
+          },
+        },
+        valueDigests: {
+          "org.test.namespace.1": new Map(),
+          "org.test.namespace.2": new Map(),
+        },
+        docType: "org.test.document",
+        validityInfo: {
+          signed: "2023-10-10T10:10:10Z",
+          validFrom: "2023-10-10T10:10:10Z",
+          validUntil: "2024-10-10T10:10:10Z",
+          expectedUpdate: "2024-06-01T00:00:00Z",
+        },
+        status: {
+          status_list: { idx: 1, uri: "https://example.com/status" },
+        },
+      },
+    },
+    {
+      field: "digestAlgorithm",
+      data: {
+        version: "1.0" as const,
+        deviceKeyInfo: {
+          deviceKey: new Map(),
+          keyAuthorizations: {
+            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
+          },
+        },
+        valueDigests: {
+          "org.test.namespace.1": new Map(),
+          "org.test.namespace.2": new Map(),
+        },
+        docType: "org.test.document",
+        validityInfo: {
+          signed: "2023-10-10T10:10:10Z",
+          validFrom: "2023-10-10T10:10:10Z",
+          validUntil: "2024-10-10T10:10:10Z",
+          expectedUpdate: "2024-06-01T00:00:00Z",
+        },
+        status: {
+          status_list: { idx: 1, uri: "https://example.com/status" },
+        },
+      },
+    },
+    {
+      field: "deviceKeyInfo",
+      data: {
+        version: "1.0" as const,
+        digestAlgorithm: "SHA-256" as const,
+        valueDigests: {
+          "org.test.namespace.1": new Map(),
+          "org.test.namespace.2": new Map(),
+        },
+        docType: "org.test.document",
+        validityInfo: {
+          signed: "2023-10-10T10:10:10Z",
+          validFrom: "2023-10-10T10:10:10Z",
+          validUntil: "2024-10-10T10:10:10Z",
+          expectedUpdate: "2024-06-01T00:00:00Z",
+        },
+        status: {
+          status_list: { idx: 1, uri: "https://example.com/status" },
+        },
+      },
+    },
+    {
+      field: "valueDigests",
+      data: {
+        version: "1.0" as const,
+        digestAlgorithm: "SHA-256" as const,
+        deviceKeyInfo: {
+          deviceKey: new Map(),
+          keyAuthorizations: {
+            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
+          },
+        },
+        docType: "org.test.document",
+        validityInfo: {
+          signed: "2023-10-10T10:10:10Z",
+          validFrom: "2023-10-10T10:10:10Z",
+          validUntil: "2024-10-10T10:10:10Z",
+          expectedUpdate: "2024-06-01T00:00:00Z",
+        },
+        status: {
+          status_list: { idx: 1, uri: "https://example.com/status" },
+        },
+      },
+    },
+    {
+      field: "docType",
+      data: {
+        version: "1.0" as const,
+        digestAlgorithm: "SHA-256" as const,
+        deviceKeyInfo: {
+          deviceKey: new Map(),
+          keyAuthorizations: {
+            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
+          },
+        },
+        valueDigests: {
+          "org.test.namespace.1": new Map(),
+          "org.test.namespace.2": new Map(),
+        },
+        validityInfo: {
+          signed: "2023-10-10T10:10:10Z",
+          validFrom: "2023-10-10T10:10:10Z",
+          validUntil: "2024-10-10T10:10:10Z",
+          expectedUpdate: "2024-06-01T00:00:00Z",
+        },
+        status: {
+          status_list: { idx: 1, uri: "https://example.com/status" },
+        },
+      },
+    },
+    {
+      field: "validityInfo",
+      data: {
+        version: "1.0" as const,
+        digestAlgorithm: "SHA-256" as const,
+        deviceKeyInfo: {
+          deviceKey: new Map(),
+          keyAuthorizations: {
+            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
+          },
+        },
+        valueDigests: {
+          "org.test.namespace.1": new Map(),
+          "org.test.namespace.2": new Map(),
+        },
+        docType: "org.test.document",
+        status: {
+          status_list: { idx: 1, uri: "https://example.com/status" },
+        },
+      },
+    },
+    {
+      field: "status",
+      data: {
+        version: "1.0" as const,
+        digestAlgorithm: "SHA-256" as const,
+        deviceKeyInfo: {
+          deviceKey: new Map(),
+          keyAuthorizations: {
+            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
+          },
+        },
+        valueDigests: {
+          "org.test.namespace.1": new Map(),
+          "org.test.namespace.2": new Map(),
+        },
+        docType: "org.test.document",
+        validityInfo: {
+          signed: "2023-10-10T10:10:10Z",
+          validFrom: "2023-10-10T10:10:10Z",
+          validUntil: "2024-10-10T10:10:10Z",
+          expectedUpdate: "2024-06-01T00:00:00Z",
+        },
+      },
+    },
+  ])("should return false when $field is missing", ({ data }) => {
+    const result = mobileSecurityObjectSchema.safeParse(data);
 
-    const isValid = validate(data);
-
-    expect(isValid).toBe(false);
-    expect(validate.errors).toContainEqual(
-      expect.objectContaining({
-        instancePath: "",
-        message: `must have required property '${field}'`,
-      }),
-    );
+    expect(result.success).toBe(false);
   });
 
   describe("version", () => {
     it("should return false when it is not '1.0'", () => {
       const data = { ...validData, version: "2.0" };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/version",
-          params: { allowedValues: ["1.0"] },
-          message: "must be equal to one of the allowed values",
+          path: ["version"],
+          code: "invalid_literal",
         }),
       );
     });
@@ -94,14 +238,13 @@ describe("mobileSecurityObjectSchema", () => {
     it("should return false when it is not 'SHA-256'", () => {
       const data = { ...validData, digestAlgorithm: "SHA-512" };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/digestAlgorithm",
-          params: { allowedValues: ["SHA-256"] },
-          message: "must be equal to one of the allowed values",
+          path: ["digestAlgorithm"],
+          code: "invalid_literal",
         }),
       );
     });
@@ -116,13 +259,13 @@ describe("mobileSecurityObjectSchema", () => {
         },
       };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/deviceKeyInfo",
-          message: "must have required property 'deviceKey'",
+          path: ["deviceKeyInfo", "deviceKey"],
+          code: "custom",
         }),
       );
     });
@@ -135,13 +278,13 @@ describe("mobileSecurityObjectSchema", () => {
         },
       };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/deviceKeyInfo",
-          message: "must have required property 'keyAuthorizations'",
+          path: ["deviceKeyInfo", "keyAuthorizations"],
+          code: "invalid_type",
         }),
       );
     });
@@ -155,13 +298,13 @@ describe("mobileSecurityObjectSchema", () => {
         },
       };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/deviceKeyInfo",
-          message: "must NOT have additional properties",
+          code: "unrecognized_keys",
+          path: ["deviceKeyInfo"],
         }),
       );
     });
@@ -176,9 +319,9 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
+        expect(result.success).toBe(false);
       });
     });
 
@@ -192,13 +335,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/deviceKeyInfo/keyAuthorizations",
-            message: "must have required property 'nameSpaces'",
+            path: ["deviceKeyInfo", "keyAuthorizations", "nameSpaces"],
+            code: "invalid_type",
           }),
         );
       });
@@ -215,13 +358,13 @@ describe("mobileSecurityObjectSchema", () => {
             },
           };
 
-          const isValid = validate(data);
+          const result = mobileSecurityObjectSchema.safeParse(data);
 
-          expect(isValid).toBe(false);
-          expect(validate.errors).toContainEqual(
+          expect(result.success).toBe(false);
+          expect(result.error?.issues).toContainEqual(
             expect.objectContaining({
-              instancePath: "/deviceKeyInfo/keyAuthorizations/nameSpaces",
-              keyword: "uniqueItems",
+              path: ["deviceKeyInfo", "keyAuthorizations", "nameSpaces"],
+              message: "must NOT have duplicate items",
             }),
           );
         });
@@ -240,9 +383,9 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
+        expect(result.success).toBe(false);
       });
     });
 
@@ -256,58 +399,73 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
+        expect(result.success).toBe(false);
       });
     });
   });
 
   describe("validityInfo", () => {
     it("should return false when signed is missing", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { signed, ...rest } = validData.validityInfo;
-      const data = { ...validData, validityInfo: rest };
+      const data = {
+        ...validData,
+        validityInfo: {
+          validFrom: validData.validityInfo.validFrom,
+          validUntil: validData.validityInfo.validUntil,
+          expectedUpdate: validData.validityInfo.expectedUpdate,
+        },
+      };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/validityInfo",
-          message: "must have required property 'signed'",
+          path: ["validityInfo", "signed"],
+          code: "invalid_type",
         }),
       );
     });
 
     it("should return false when validFrom is missing", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { validFrom, ...rest } = validData.validityInfo;
-      const data = { ...validData, validityInfo: rest };
+      const data = {
+        ...validData,
+        validityInfo: {
+          signed: validData.validityInfo.signed,
+          validUntil: validData.validityInfo.validUntil,
+          expectedUpdate: validData.validityInfo.expectedUpdate,
+        },
+      };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/validityInfo",
-          message: "must have required property 'validFrom'",
+          path: ["validityInfo", "validFrom"],
+          code: "invalid_type",
         }),
       );
     });
 
     it("should return false when validUntil is missing", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { validUntil, ...rest } = validData.validityInfo;
-      const data = { ...validData, validityInfo: rest };
+      const data = {
+        ...validData,
+        validityInfo: {
+          signed: validData.validityInfo.signed,
+          validFrom: validData.validityInfo.validFrom,
+          expectedUpdate: validData.validityInfo.expectedUpdate,
+        },
+      };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/validityInfo",
-          message: "must have required property 'validUntil'",
+          path: ["validityInfo", "validUntil"],
+          code: "invalid_type",
         }),
       );
     });
@@ -321,13 +479,13 @@ describe("mobileSecurityObjectSchema", () => {
         },
       };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/validityInfo",
-          message: "must NOT have additional properties",
+          code: "unrecognized_keys",
+          path: ["validityInfo"],
         }),
       );
     });
@@ -342,14 +500,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/validityInfo/signed",
-            keyword: "format",
-            params: { format: "date-time" },
+            path: ["validityInfo", "signed"],
+            code: "invalid_string",
           }),
         );
       });
@@ -365,14 +522,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/validityInfo/validFrom",
-            keyword: "format",
-            params: { format: "date-time" },
+            path: ["validityInfo", "validFrom"],
+            code: "invalid_string",
           }),
         );
       });
@@ -388,14 +544,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/validityInfo/validUntil",
-            keyword: "format",
-            params: { format: "date-time" },
+            path: ["validityInfo", "validUntil"],
+            code: "invalid_string",
           }),
         );
       });
@@ -411,24 +566,30 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/validityInfo/expectedUpdate",
-            keyword: "format",
-            params: { format: "date-time" },
+            path: ["validityInfo", "expectedUpdate"],
+            code: "invalid_string",
           }),
         );
       });
 
       it("should return true when it is absent", () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { expectedUpdate, ...rest } = validData.validityInfo;
-        const data = { ...validData, validityInfo: rest };
+        const data = {
+          ...validData,
+          validityInfo: {
+            signed: validData.validityInfo.signed,
+            validFrom: validData.validityInfo.validFrom,
+            validUntil: validData.validityInfo.validUntil,
+          },
+        };
 
-        expect(validate(data)).toBe(true);
+        const result = mobileSecurityObjectSchema.safeParse(data);
+
+        expect(result.success).toBe(true);
       });
     });
   });
@@ -437,13 +598,13 @@ describe("mobileSecurityObjectSchema", () => {
     it("should return false when status_list is missing", () => {
       const data = { ...validData, status: {} };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/status",
-          message: "must have required property 'status_list'",
+          path: ["status", "status_list"],
+          code: "invalid_type",
         }),
       );
     });
@@ -460,13 +621,13 @@ describe("mobileSecurityObjectSchema", () => {
         },
       };
 
-      const isValid = validate(data);
+      const result = mobileSecurityObjectSchema.safeParse(data);
 
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
         expect.objectContaining({
-          instancePath: "/status",
-          message: "must NOT have additional properties",
+          code: "unrecognized_keys",
+          path: ["status"],
         }),
       );
     });
@@ -482,13 +643,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/status/status_list",
-            message: "must have required property 'idx'",
+            path: ["status", "status_list", "idx"],
+            code: "invalid_type",
           }),
         );
       });
@@ -503,13 +664,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/status/status_list",
-            message: "must have required property 'uri'",
+            path: ["status", "status_list", "uri"],
+            code: "invalid_type",
           }),
         );
       });
@@ -526,13 +687,13 @@ describe("mobileSecurityObjectSchema", () => {
           },
         };
 
-        const isValid = validate(data);
+        const result = mobileSecurityObjectSchema.safeParse(data);
 
-        expect(isValid).toBe(false);
-        expect(validate.errors).toContainEqual(
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toContainEqual(
           expect.objectContaining({
-            instancePath: "/status/status_list",
-            message: "must NOT have additional properties",
+            code: "unrecognized_keys",
+            path: ["status", "status_list"],
           }),
         );
       });
@@ -549,14 +710,13 @@ describe("mobileSecurityObjectSchema", () => {
             },
           };
 
-          const isValid = validate(data);
+          const result = mobileSecurityObjectSchema.safeParse(data);
 
-          expect(isValid).toBe(false);
-          expect(validate.errors).toContainEqual(
+          expect(result.success).toBe(false);
+          expect(result.error?.issues).toContainEqual(
             expect.objectContaining({
-              instancePath: "/status/status_list/idx",
-              keyword: "type",
-              params: { type: "number" },
+              path: ["status", "status_list", "idx"],
+              code: "invalid_type",
             }),
           );
         });
@@ -574,14 +734,13 @@ describe("mobileSecurityObjectSchema", () => {
             },
           };
 
-          const isValid = validate(data);
+          const result = mobileSecurityObjectSchema.safeParse(data);
 
-          expect(isValid).toBe(false);
-          expect(validate.errors).toContainEqual(
+          expect(result.success).toBe(false);
+          expect(result.error?.issues).toContainEqual(
             expect.objectContaining({
-              instancePath: "/status/status_list/uri",
-              keyword: "format",
-              params: { format: "uri" },
+              path: ["status", "status_list", "uri"],
+              code: "invalid_string",
             }),
           );
         });
@@ -590,8 +749,8 @@ describe("mobileSecurityObjectSchema", () => {
   });
 
   it("should return true when data is valid", () => {
-    const isValid = validate(validData);
+    const result = mobileSecurityObjectSchema.safeParse(validData);
 
-    expect(isValid).toBe(true);
+    expect(result.success).toBe(true);
   });
 });
