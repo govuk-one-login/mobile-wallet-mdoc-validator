@@ -45,174 +45,18 @@ describe("mobileSecurityObjectSchema", () => {
   });
 
   it.each([
-    {
-      field: "version",
-      data: {
-        digestAlgorithm: "SHA-256" as const,
-        deviceKeyInfo: {
-          deviceKey: new Map(),
-          keyAuthorizations: {
-            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
-          },
-        },
-        valueDigests: {
-          "org.test.namespace.1": new Map(),
-          "org.test.namespace.2": new Map(),
-        },
-        docType: "org.test.document",
-        validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
-        },
-        status: {
-          status_list: { idx: 1, uri: "https://example.com/status" },
-        },
-      },
-    },
-    {
-      field: "digestAlgorithm",
-      data: {
-        version: "1.0" as const,
-        deviceKeyInfo: {
-          deviceKey: new Map(),
-          keyAuthorizations: {
-            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
-          },
-        },
-        valueDigests: {
-          "org.test.namespace.1": new Map(),
-          "org.test.namespace.2": new Map(),
-        },
-        docType: "org.test.document",
-        validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
-        },
-        status: {
-          status_list: { idx: 1, uri: "https://example.com/status" },
-        },
-      },
-    },
-    {
-      field: "deviceKeyInfo",
-      data: {
-        version: "1.0" as const,
-        digestAlgorithm: "SHA-256" as const,
-        valueDigests: {
-          "org.test.namespace.1": new Map(),
-          "org.test.namespace.2": new Map(),
-        },
-        docType: "org.test.document",
-        validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
-        },
-        status: {
-          status_list: { idx: 1, uri: "https://example.com/status" },
-        },
-      },
-    },
-    {
-      field: "valueDigests",
-      data: {
-        version: "1.0" as const,
-        digestAlgorithm: "SHA-256" as const,
-        deviceKeyInfo: {
-          deviceKey: new Map(),
-          keyAuthorizations: {
-            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
-          },
-        },
-        docType: "org.test.document",
-        validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
-        },
-        status: {
-          status_list: { idx: 1, uri: "https://example.com/status" },
-        },
-      },
-    },
-    {
-      field: "docType",
-      data: {
-        version: "1.0" as const,
-        digestAlgorithm: "SHA-256" as const,
-        deviceKeyInfo: {
-          deviceKey: new Map(),
-          keyAuthorizations: {
-            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
-          },
-        },
-        valueDigests: {
-          "org.test.namespace.1": new Map(),
-          "org.test.namespace.2": new Map(),
-        },
-        validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
-        },
-        status: {
-          status_list: { idx: 1, uri: "https://example.com/status" },
-        },
-      },
-    },
-    {
-      field: "validityInfo",
-      data: {
-        version: "1.0" as const,
-        digestAlgorithm: "SHA-256" as const,
-        deviceKeyInfo: {
-          deviceKey: new Map(),
-          keyAuthorizations: {
-            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
-          },
-        },
-        valueDigests: {
-          "org.test.namespace.1": new Map(),
-          "org.test.namespace.2": new Map(),
-        },
-        docType: "org.test.document",
-        status: {
-          status_list: { idx: 1, uri: "https://example.com/status" },
-        },
-      },
-    },
-    {
-      field: "status",
-      data: {
-        version: "1.0" as const,
-        digestAlgorithm: "SHA-256" as const,
-        deviceKeyInfo: {
-          deviceKey: new Map(),
-          keyAuthorizations: {
-            nameSpaces: ["org.test.namespace.1", "org.test.namespace.2"],
-          },
-        },
-        valueDigests: {
-          "org.test.namespace.1": new Map(),
-          "org.test.namespace.2": new Map(),
-        },
-        docType: "org.test.document",
-        validityInfo: {
-          signed: "2023-10-10T10:10:10Z",
-          validFrom: "2023-10-10T10:10:10Z",
-          validUntil: "2024-10-10T10:10:10Z",
-          expectedUpdate: "2024-06-01T00:00:00Z",
-        },
-      },
-    },
-  ])("should return false when $field is missing", ({ data }) => {
+    "version",
+    "digestAlgorithm",
+    "deviceKeyInfo",
+    "valueDigests",
+    "docType",
+    "validityInfo",
+    "status",
+  ])("should return false when %s is missing", (field) => {
+    const data: Record<string, unknown> = { ...validData };
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete data[field];
+
     const result = mobileSecurityObjectSchema.safeParse(data);
 
     expect(result.success).toBe(false);
