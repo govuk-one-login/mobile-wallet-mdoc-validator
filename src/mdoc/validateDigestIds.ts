@@ -1,5 +1,6 @@
 import { decode } from "cbor2";
 import { MdocValidationError } from "./MdocValidationError";
+import { parseSchema } from "./parseSchema";
 import {
   issuerSignedItemSchema,
   NameSpaces,
@@ -14,7 +15,11 @@ export function validateDigestIds(namespaces: NameSpaces) {
           "INVALID_SCHEMA",
         );
       }
-      const item = issuerSignedItemSchema.parse(decode(taggedItem.contents));
+      const item = parseSchema(
+        issuerSignedItemSchema,
+        decode(taggedItem.contents),
+        "IssuerSignedItem",
+      );
       return item.digestID;
     });
 

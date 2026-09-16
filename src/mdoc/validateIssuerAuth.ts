@@ -136,8 +136,10 @@ function validateDigests(
         );
       }
 
-      const issuedSignedItem = issuerSignedItemSchema.parse(
+      const issuedSignedItem = parseSchema(
+        issuerSignedItemSchema,
         decode(taggedIssuerSignedItemBytes.contents),
+        "IssuerSignedItem",
       );
       const digestID = issuedSignedItem.digestID;
 
