@@ -40,7 +40,7 @@ export async function validateMdoc(credential: string): Promise<boolean> {
 
   validateIssuerSignedSchema(issuerSigned);
 
-  validateDigestIds(issuerSigned.nameSpaces);
+  validateDigestIds(taggedIssuerSigned.nameSpaces);
 
   await validateIssuerAuth(
     issuerSigned.issuerAuth,
