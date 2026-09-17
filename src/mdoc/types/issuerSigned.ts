@@ -1,9 +1,4 @@
 import { Tag } from "cbor2";
-import { NameSpace } from "./namespaces";
-import {
-  DrivingPrivileges,
-  TaggedDrivingPrivileges,
-} from "./drivingPrivileges";
 
 export type IssuerAuth = [
   protectedHeader: Uint8Array,
@@ -15,7 +10,7 @@ export type IssuerAuth = [
 export interface IssuerSignedItem {
   digestID: number;
   elementIdentifier: string;
-  elementValue: string | boolean | Uint8Array | DrivingPrivileges[];
+  elementValue: string | boolean | Uint8Array;
   random: Uint8Array;
 }
 
@@ -23,14 +18,14 @@ export interface TaggedIssuerSignedItem extends Omit<
   IssuerSignedItem,
   "elementValue"
 > {
-  elementValue: string | boolean | Uint8Array | TaggedDrivingPrivileges[] | Tag;
+  elementValue: string | boolean | Uint8Array | Tag;
 }
 
 export interface IssuerSigned {
   issuerAuth: IssuerAuth;
-  nameSpaces: Record<NameSpace, IssuerSignedItem[]>;
+  nameSpaces: Record<string, IssuerSignedItem[]>;
 }
 
 export interface TaggedIssuerSigned extends Omit<IssuerSigned, "nameSpaces"> {
-  nameSpaces: Record<NameSpace, Tag[]>;
+  nameSpaces: Record<string, Tag[]>;
 }

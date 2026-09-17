@@ -1,9 +1,9 @@
-export class MDLValidationError extends Error {
+export class MdocValidationError extends Error {
   public readonly code: string;
 
   constructor(message: string, code = "VALIDATION_FAILED") {
     super(message);
-    this.name = "MDLValidationError";
+    this.name = "MdocValidationError";
     this.code = code;
   }
 }

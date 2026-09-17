@@ -1,3 +1,2 @@
-export function validateMdoc(): string {
-  return "hello world";
-}
+export { validateMdoc } from "./mdoc/validateMdoc";
+export { MdocValidationError } from "./mdoc/MdocValidationError";

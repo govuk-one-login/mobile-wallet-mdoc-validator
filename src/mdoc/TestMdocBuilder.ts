@@ -14,22 +14,19 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-import { NAMESPACES } from "./constants/namespaces";
-import { IssuerSignedItem } from "./types/issuerSigned";
-import { NameSpace } from "./types/namespaces";
-import { DrivingPrivileges } from "./types/drivingPrivileges";
+import { TaggedIssuerSignedItem } from "./types/issuerSigned";
 
-export class TestMDLBuilder {
-  private readonly namespaces: Map<NameSpace, IssuerSignedItem[]>;
+export class TestMdocBuilder {
+  private readonly namespaces: Map<string, TaggedIssuerSignedItem[]>;
   private readonly validityInfo: {
     signed: Tag | string;
     validFrom: Tag | string;
     validUntil: Tag | string;
     expectedUpdate?: Tag | string;
   };
-  private readonly deviceKey: Map<number, any>;
-  private readonly protectedHeader: any;
-  private readonly unprotectedHeader: Map<number, Uint8Array>;
+  private readonly deviceKey: Map<unknown, unknown>;
+  private readonly protectedHeader: Map<unknown, unknown>;
+  private readonly unprotectedHeader: Map<unknown, unknown>;
 
   private readonly elementsWithoutTag24: Set<string>;
   private readonly elementsWithMismatchedDigests: Map<string, Uint8Array>;
@@ -51,9 +48,9 @@ export class TestMDLBuilder {
       validUntil: new Tag(TAGS.DATE_TIME, "2026-09-10T15:20:00Z"),
     };
 
-    this.deviceKey = new Map<number, number | Uint8Array>(DEFAULT_DEVICE_KEY);
+    this.deviceKey = new Map<unknown, unknown>(DEFAULT_DEVICE_KEY);
 
-    this.protectedHeader = new Map().set(
+    this.protectedHeader = new Map<unknown, unknown>().set(
       COSE_HEADER_PARAMETERS.ALG,
       COSE_ALGORITHMS.ES256,
     );
@@ -61,7 +58,7 @@ export class TestMDLBuilder {
     const documentSigningCertificate = new X509Certificate(
       DEFAULT_DOCUMENT_SIGNING_CERTIFICATE,
     );
-    this.unprotectedHeader = new Map().set(
+    this.unprotectedHeader = new Map<unknown, unknown>().set(
       COSE_HEADER_PARAMETERS.X5_CHAIN,
       new Uint8Array(documentSigningCertificate.raw),
     );
@@ -119,7 +116,7 @@ export class TestMDLBuilder {
           nameSpaces: Array.from(this.namespaces.keys()),
         },
       },
-      docType: "org.iso.18013.5.1.mDL",
+      docType: "org.test.document",
       status: {
         status_list: { idx: 1, uri: "https://example-status-list.com" },
       },
@@ -176,20 +173,6 @@ export class TestMDLBuilder {
     return base64url.encode(encode(result));
   }
 
-  withElementValue(
-    elementIdentifier: string,
-    elementValue: string | Uint8Array | DrivingPrivileges[],
-  ) {
-    for (const items of this.namespaces.values()) {
-      const item = items.find((i) => i.elementIdentifier === elementIdentifier);
-      if (item) {
-        item.elementValue = elementValue;
-        return this;
-      }
-    }
-    return this;
-  }
-
   withDigestId(elementIdentifier: string, digestId: number) {
     for (const items of this.namespaces.values()) {
       const item = items.find((i) => i.elementIdentifier === elementIdentifier);
@@ -236,12 +219,12 @@ export class TestMDLBuilder {
     return this;
   }
 
-  withDeviceKeyParameter(key: number, value: any) {
+  withDeviceKeyParameter(key: unknown, value: unknown): this {
     this.deviceKey.set(key, value);
     return this;
   }
 
-  withProtectedHeader(protectedHeader: any) {
+  withProtectedHeader(protectedHeader: Map<unknown, unknown>) {
     this.protectedHeader.clear();
     for (const [key, value] of protectedHeader) {
       this.protectedHeader.set(key, value);
@@ -249,7 +232,7 @@ export class TestMDLBuilder {
     return this;
   }
 
-  withUnprotectedHeader(unprotectedHeader: Map<number, Uint8Array>) {
+  withUnprotectedHeader(unprotectedHeader: Map<unknown, unknown>) {
     this.unprotectedHeader.clear();
     for (const [key, value] of unprotectedHeader) {
       this.unprotectedHeader.set(key, value);
@@ -260,28 +243,15 @@ export class TestMDLBuilder {
 
 const DEFAULT_NAMESPACES = new Map([
   [
-    NAMESPACES.GB,
+    "org.test.namespace.1",
     [
       {
-        digestID: 20,
+        digestID: 90,
         random: new Uint8Array([
-          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+          9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
         ]),
-        elementIdentifier: "welsh_licence",
-        elementValue: true,
-      },
-      {
-        digestID: 30,
-        random: new Uint8Array([
-          2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        ]),
-        elementIdentifier: "provisional_driving_privileges",
-        elementValue: [
-          {
-            vehicle_category_code: "C1",
-            issue_date: new Tag(TAGS.FULL_DATE, "2029-05-10"),
-          },
-        ],
+        elementIdentifier: "portrait",
+        elementValue: new Uint8Array([255, 216, 255, 224, 255, 217]),
       },
       {
         digestID: 40,
@@ -294,7 +264,7 @@ const DEFAULT_NAMESPACES = new Map([
     ],
   ],
   [
-    NAMESPACES.ISO,
+    "org.test.namespace.2",
     [
       {
         digestID: 10,
@@ -319,107 +289,6 @@ const DEFAULT_NAMESPACES = new Map([
         ]),
         elementIdentifier: "birth_date",
         elementValue: new Tag(TAGS.FULL_DATE, "2000-12-12"),
-      },
-      {
-        digestID: 40,
-        random: new Uint8Array([
-          3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        ]),
-        elementIdentifier: "issue_date",
-        elementValue: new Tag(TAGS.FULL_DATE, "2020-07-01"),
-      },
-      {
-        digestID: 50,
-        random: new Uint8Array([
-          4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        ]),
-        elementIdentifier: "expiry_date",
-        elementValue: new Tag(TAGS.FULL_DATE, "2030-06-30"),
-      },
-      {
-        digestID: 60,
-        random: new Uint8Array([
-          6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-        ]),
-        elementIdentifier: "issuing_country",
-        elementValue: "GB",
-      },
-      {
-        digestID: 70,
-        random: new Uint8Array([
-          7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        ]),
-        elementIdentifier: "issuing_authority",
-        elementValue: "DVLA",
-      },
-      {
-        digestID: 80,
-        random: new Uint8Array([
-          8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        ]),
-        elementIdentifier: "document_number",
-        elementValue: "TEST123",
-      },
-      {
-        digestID: 90,
-        random: new Uint8Array([
-          9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-        ]),
-        elementIdentifier: "portrait",
-        elementValue: new Uint8Array([255, 216, 255, 224, 255, 217]),
-      },
-      {
-        digestID: 100,
-        random: new Uint8Array([
-          10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-        ]),
-        elementIdentifier: "birth_place",
-        elementValue: "London",
-      },
-      {
-        digestID: 110,
-        random: new Uint8Array([
-          11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
-        ]),
-        elementIdentifier: "driving_privileges",
-        elementValue: [
-          {
-            vehicle_category_code: "C1",
-            issue_date: new Tag(TAGS.FULL_DATE, "2029-05-10"),
-          },
-        ],
-      },
-      {
-        digestID: 120,
-        random: new Uint8Array([
-          12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-        ]),
-        elementIdentifier: "un_distinguishing_sign",
-        elementValue: "UK",
-      },
-      {
-        digestID: 130,
-        random: new Uint8Array([
-          13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
-        ]),
-        elementIdentifier: "resident_address",
-        elementValue: "Adelaide Road",
-      },
-      {
-        digestID: 140,
-        random: new Uint8Array([
-          14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-        ]),
-        elementIdentifier: "resident_postal_code",
-        elementValue: "NW3 3RX",
-      },
-      {
-        digestID: 150,
-        random: new Uint8Array([
-          15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
-        ]),
-        elementIdentifier: "resident_city",
-        elementValue: "London",
       },
     ],
   ],

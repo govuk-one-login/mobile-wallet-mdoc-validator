@@ -3,13 +3,12 @@ import { Tag } from "cbor2";
 export interface DeviceKeyInfo {
   deviceKey: Map<unknown, unknown>;
   keyAuthorizations: {
-    nameSpaces: ("org.iso.18013.5.1.GB" | "org.iso.18013.5.1")[];
+    nameSpaces: string[];
   };
 }
 
 export interface ValueDigests {
-  "org.iso.18013.5.1.GB": Map<unknown, Uint8Array>;
-  "org.iso.18013.5.1": Map<unknown, Uint8Array>;
+  [namespace: string]: Map<unknown, Uint8Array>;
 }
 
 export interface ValidityInfo {
@@ -24,7 +23,7 @@ export interface MobileSecurityObject {
   digestAlgorithm: "SHA-256";
   deviceKeyInfo: DeviceKeyInfo;
   valueDigests: ValueDigests;
-  docType: "org.iso.18013.5.1.mDL";
+  docType: string;
   validityInfo: ValidityInfo;
   status: {
     status_list: {

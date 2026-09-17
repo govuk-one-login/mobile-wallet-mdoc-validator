@@ -1,20 +1,15 @@
-import { getAjvInstance } from "../../../ajv/ajvInstance";
+import { getAjvInstance } from "../../ajv/ajvInstance";
 import { issuerSignedSchema } from "./issuerSignedSchema";
 
 describe("issuerSignedSchema", () => {
   const ajv = getAjvInstance();
-  if (!ajv.getSchema("iso-namespace")) {
-    ajv.addSchema({ $id: "iso-namespace", type: "array" });
-  }
-  if (!ajv.getSchema("domestic-namespace")) {
-    ajv.addSchema({ $id: "domestic-namespace", type: "array" });
-  }
+
   const validate = ajv.compile(issuerSignedSchema);
 
   const validData = {
     nameSpaces: {
-      "org.iso.18013.5.1": [],
-      "org.iso.18013.5.1.GB": [],
+      "org.test.namespace.1": [new Uint8Array()],
+      "org.test.namespace.2": [new Uint8Array()],
     },
     issuerAuth: [
       new Uint8Array(),
@@ -72,13 +67,8 @@ describe("issuerSignedSchema", () => {
   });
 
   describe("nameSpaces", () => {
-    it("should return false when org.iso.18013.5.1 is missing", () => {
-      const data = {
-        ...validData,
-        nameSpaces: {
-          "org.iso.18013.5.1.GB": [],
-        },
-      };
+    it("should return false when it is empty", () => {
+      const data = { ...validData, nameSpaces: {} };
 
       const isValid = validate(data);
 
@@ -86,16 +76,16 @@ describe("issuerSignedSchema", () => {
       expect(validate.errors).toContainEqual(
         expect.objectContaining({
           instancePath: "/nameSpaces",
-          message: "must have required property 'org.iso.18013.5.1'",
+          message: "must NOT have fewer than 1 properties",
         }),
       );
     });
 
-    it("should return false when org.iso.18013.5.1.GB is missing", () => {
+    it("should return false when a namespace has no items", () => {
       const data = {
         ...validData,
         nameSpaces: {
-          "org.iso.18013.5.1": [],
+          "org.test.namespace.1": [],
         },
       };
 
@@ -104,28 +94,8 @@ describe("issuerSignedSchema", () => {
       expect(isValid).toBe(false);
       expect(validate.errors).toContainEqual(
         expect.objectContaining({
-          instancePath: "/nameSpaces",
-          message: "must have required property 'org.iso.18013.5.1.GB'",
-        }),
-      );
-    });
-
-    it("should return false when it contains additional properties", () => {
-      const data = {
-        ...validData,
-        nameSpaces: {
-          ...validData.nameSpaces,
-          "org.unknown.namespace": [],
-        },
-      };
-
-      const isValid = validate(data);
-
-      expect(isValid).toBe(false);
-      expect(validate.errors).toContainEqual(
-        expect.objectContaining({
-          instancePath: "/nameSpaces",
-          message: "must NOT have additional properties",
+          instancePath: "/nameSpaces/org.test.namespace.1",
+          message: "must NOT have fewer than 1 items",
         }),
       );
     });

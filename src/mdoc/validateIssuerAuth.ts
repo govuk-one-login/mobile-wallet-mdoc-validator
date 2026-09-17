@@ -1,11 +1,10 @@
-import { decode, encode, Tag } from "cbor2";
+import { decode, encode, Tag, type TagDecoderMap } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
-import { getAjvInstance } from "../../ajv/ajvInstance";
+import { getAjvInstance } from "../ajv/ajvInstance";
 import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema";
 import { TAGS } from "./constants/tags";
-import { errorMessage, MDLValidationError } from "./MDLValidationError";
+import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { IssuerAuth, TaggedIssuerSignedItem } from "./types/issuerSigned";
-import { NameSpace } from "./types/namespaces";
 import {
   MobileSecurityObject,
   ValidityInfo,
@@ -19,29 +18,24 @@ import {
   COSE_KEY_TYPES,
 } from "./constants/cose";
 
-const tags = new Map([
+const tags: TagDecoderMap = new Map([
   [
     TAGS.ENCODED_CBOR_DATA,
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    ({ contents }: { contents: any }) => decode(contents, { tags: tags }),
+    (tag: { contents: unknown }) =>
+      decode(tag.contents as Uint8Array, { tags: tags }),
   ],
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  [TAGS.DATE_TIME, ({ contents }: { contents: any }) => contents],
+  [TAGS.DATE_TIME, (tag: { contents: unknown }) => tag.contents],
 ]);
 
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
-  namespaces: Record<NameSpace, Tag[]>,
-  rootCertificatePem: string,
+  namespaces: Record<string, Tag[]>,
 ) {
   const protectedHeader = issuerAuth[0];
   validateProtectedHeader(protectedHeader);
 
   const unprotectedHeader = issuerAuth[1];
-  const certificate = await validateUnprotectedHeader(
-    unprotectedHeader,
-    rootCertificatePem,
-  );
+  const certificate = validateUnprotectedHeader(unprotectedHeader);
 
   const payload = issuerAuth[2];
   await validatePayload(payload, namespaces);
@@ -53,20 +47,20 @@ export async function validateIssuerAuth(
 function validateProtectedHeader(protectedHeader: Uint8Array): void {
   const protectedHeaderDecoded = decode(protectedHeader);
   if (!(protectedHeaderDecoded instanceof Map)) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "Protected header is not a Map",
       "INVALID_PROTECTED_HEADER",
     );
   }
 
   if (protectedHeaderDecoded.size !== 1) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "Protected header contains unexpected extra parameters - must contain only one",
       "INVALID_PROTECTED_HEADER",
     );
   }
   if (!protectedHeaderDecoded.has(COSE_HEADER_PARAMETERS.ALG)) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       'Protected header missing "alg" (1)',
       "INVALID_PROTECTED_HEADER",
     );
@@ -75,83 +69,37 @@ function validateProtectedHeader(protectedHeader: Uint8Array): void {
     protectedHeaderDecoded.get(COSE_HEADER_PARAMETERS.ALG) !==
     COSE_ALGORITHMS.ES256
   ) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       'Protected header "alg" must be -7 (ES256)',
       "INVALID_PROTECTED_HEADER",
     );
   }
 }
 
-async function validateUnprotectedHeader(
+function validateUnprotectedHeader(
   unprotectedHeader: Map<number, Uint8Array>,
-  rootCertificatePem: string,
-): Promise<X509Certificate> {
+): X509Certificate {
   if (unprotectedHeader.size !== 1) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "Unprotected header contains unexpected extra parameters - must contain only one",
       "INVALID_UNPROTECTED_HEADER",
     );
   }
-  if (!unprotectedHeader.has(COSE_HEADER_PARAMETERS.X5_CHAIN)) {
-    throw new MDLValidationError(
+  const x5chain = unprotectedHeader.get(COSE_HEADER_PARAMETERS.X5_CHAIN);
+
+  if (x5chain === undefined) {
+    throw new MdocValidationError(
       'Unprotected header missing "x5chain" (33)',
       "INVALID_UNPROTECTED_HEADER",
     );
   }
 
-  const x5chain = unprotectedHeader.get(COSE_HEADER_PARAMETERS.X5_CHAIN)!;
-
   let certificate: X509Certificate;
   try {
     certificate = new X509Certificate(x5chain);
   } catch (error) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Failed to parse document signing certificate as X509Certificate - ${errorMessage(error)}`,
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  const rootCertificate = new X509Certificate(rootCertificatePem);
-
-  if (certificate.ca) {
-    throw new MDLValidationError(
-      "Document signing certificate must not be a CA certificate",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  const validFrom = new Date(certificate.validFrom).getTime();
-  const validTo = new Date(certificate.validTo).getTime();
-  const now = Date.now();
-
-  if (now < validFrom || now > validTo) {
-    throw new MDLValidationError(
-      "Document signing certificate is not valid at the current time",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  if (certificate.issuer !== rootCertificate.subject) {
-    throw new MDLValidationError(
-      "Certificate issuer does not match root subject",
-      "INVALID_UNPROTECTED_HEADER",
-    );
-  }
-
-  try {
-    const outcome = certificate.verify(rootCertificate.publicKey);
-    if (!outcome) {
-      throw new MDLValidationError(
-        "Document signing certificate signature not verified",
-        "INVALID_UNPROTECTED_HEADER",
-      );
-    }
-  } catch (error) {
-    if (error instanceof MDLValidationError) {
-      throw error;
-    }
-    throw new MDLValidationError(
-      `Signature could not be verified - ${errorMessage(error)}`,
       "INVALID_UNPROTECTED_HEADER",
     );
   }
@@ -161,7 +109,7 @@ async function validateUnprotectedHeader(
 
 async function validatePayload(
   payload: Uint8Array,
-  nameSpaces: Record<NameSpace, Tag[]>,
+  nameSpaces: Record<string, Tag[]>,
 ) {
   const mobileSecurityObject: MobileSecurityObject = decode(payload, {
     tags: tags,
@@ -192,7 +140,7 @@ function validateMobileSecurityObject(
       .map((err) => `${err.path}: ${err.message}`)
       .join("; ");
 
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `MobileSecurityObject does not comply with schema - ${errorDetails}`,
       "INVALID_SCHEMA",
     );
@@ -201,12 +149,9 @@ function validateMobileSecurityObject(
 
 function validateDigests(
   valueDigests: ValueDigests,
-  nameSpaces: Record<NameSpace, Tag[]>,
+  nameSpaces: Record<string, Tag[]>,
 ): void {
-  for (const [namespace, items] of Object.entries(nameSpaces) as [
-    NameSpace,
-    Tag[],
-  ][]) {
+  for (const [namespace, items] of Object.entries(nameSpaces)) {
     for (const taggedIssuerSignedItemBytes of items) {
       const encodedTaggedIssuerSignedItemBytes = encode(
         taggedIssuerSignedItemBytes,
@@ -217,21 +162,21 @@ function validateDigests(
 
       const issuerSignedItemBytes =
         taggedIssuerSignedItemBytes.contents as Uint8Array;
-      const issuedSignedItem = decode(
+      const issuedSignedItem = decode<TaggedIssuerSignedItem>(
         issuerSignedItemBytes,
-      ) as TaggedIssuerSignedItem;
+      );
       const digestID = issuedSignedItem.digestID;
 
       const msoDigests = valueDigests[namespace] as Map<number, Uint8Array>;
       const expectedDigest = msoDigests.get(digestID);
       if (!expectedDigest) {
-        throw new MDLValidationError(
-          `No digest found for digest ID ${digestID} in MSO namespace ${namespace}: ${[...msoDigests.keys()]}`,
+        throw new MdocValidationError(
+          `No digest found for digest ID ${digestID.toString()} in MSO namespace ${namespace}`,
         );
       }
       if (!calculatedDigest.equals(expectedDigest)) {
-        throw new MDLValidationError(
-          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
+        throw new MdocValidationError(
+          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID.toString()} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
           "INVALID_DIGESTS",
         );
       }
@@ -254,14 +199,14 @@ async function validateDeviceKey(
     keys.size !== requiredKeys.length ||
     requiredKeys.some((k) => !keys.has(k))
   ) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "DeviceKey must contain exactly the keys [1, -1, -2, -3]",
       "INVALID_DEVICE_KEY",
     );
   }
 
   if (deviceKey.get(COSE_KEY_PARAMETERS.KTY) !== COSE_KEY_TYPES.EC2) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "DeviceKey key type (1) must be EC2 (Elliptic Curve) (2)",
       "INVALID_DEVICE_KEY",
     );
@@ -270,7 +215,7 @@ async function validateDeviceKey(
   if (
     deviceKey.get(COSE_KEY_PARAMETERS.EC2_CRV) !== COSE_ELLIPTIC_CURVES.P_256
   ) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "DeviceKey curve (-1) must be P-256 (1)",
       "INVALID_DEVICE_KEY",
     );
@@ -279,13 +224,13 @@ async function validateDeviceKey(
   const y = deviceKey.get(COSE_KEY_PARAMETERS.EC2_Y);
 
   if (!(x instanceof Uint8Array)) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "DeviceKey x-coordinate (-2) must be a Uint8Array",
       "INVALID_DEVICE_KEY",
     );
   }
   if (!(y instanceof Uint8Array)) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       "DeviceKey y-coordinate (-3) must be a Uint8Array",
       "INVALID_DEVICE_KEY",
     );
@@ -307,7 +252,7 @@ async function validateDeviceKey(
       ["verify"],
     );
   } catch {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Invalid elliptic curve key`,
       "INVALID_DEVICE_KEY",
     );
@@ -336,16 +281,16 @@ function verifySignature(
       signature,
     );
     if (!outcome) {
-      throw new MDLValidationError(
+      throw new MdocValidationError(
         "Signature not verified",
         "INVALID_SIGNATURE",
       );
     }
   } catch (error) {
-    if (error instanceof MDLValidationError) {
+    if (error instanceof MdocValidationError) {
       throw error;
     }
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Signature could not be verified - ${errorMessage(error)} `,
       "INVALID_SIGNATURE",
     );
@@ -381,7 +326,7 @@ function validateValidityInfo(validityInfo: ValidityInfo): void {
   }
 
   if (errors.length !== 0) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `One or more dates are invalid - ${errorMessage(errors)}`,
       "INVALID_VALIDITY_INFO",
     );

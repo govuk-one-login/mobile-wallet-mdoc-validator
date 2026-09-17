@@ -1,27 +1,21 @@
-import { decode, Tag } from "cbor2";
+import { decode, Tag, type TagDecoderMap } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
 import { validateTags } from "./validateTags";
 import { validateIssuerAuth } from "./validateIssuerAuth";
 import { TAGS } from "./constants/tags";
-import { validatePortrait } from "./validatePortrait";
-import { errorMessage, MDLValidationError } from "./MDLValidationError";
+import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { IssuerSigned, TaggedIssuerSigned } from "./types/issuerSigned";
 import { validateIssuerSignedSchema } from "./validateIssuerSigned";
 import { validateDigestIds } from "./validateDigestIds";
-import { NAMESPACES } from "./constants/namespaces";
 
 /**
- * Validates a base64url-encoded mDL credential string.
+ * Validates a base64url-encoded mdoc credential string.
  *
  * @param credential - Base64url-encoded credential.
- * @param rootCertificatePem - Root certificate in PEM format.
  * @returns true if the credential is valid; otherwise, throws an error.
  */
-export async function isValidCredential(
-  credential: string,
-  rootCertificatePem: string,
-): Promise<boolean> {
+export async function validateMdoc(credential: string): Promise<boolean> {
   const cborBytes = base64UrlToUint8Array(credential);
 
   /*
@@ -43,12 +37,10 @@ export async function isValidCredential(
   validateIssuerSignedSchema(issuerSigned);
 
   validateDigestIds(issuerSigned.nameSpaces);
-  validatePortrait(issuerSigned.nameSpaces[NAMESPACES.ISO]);
 
   await validateIssuerAuth(
     issuerSigned.issuerAuth,
     taggedIssuerSigned.nameSpaces,
-    rootCertificatePem,
   );
 
   return true;
@@ -58,7 +50,7 @@ function base64UrlToUint8Array(data: string): Uint8Array {
   try {
     return new Uint8Array(base64url.decode(data));
   } catch (error) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Failed to decode base64url encoded credential - ${errorMessage(error)}`,
       "INVALID_BASE64URL",
     );
@@ -83,33 +75,31 @@ Tag.registerDecoder(
   (tag) => new Tag(TAGS.FULL_DATE, tag.contents),
 );
 
-const tags = new Map([
+const tags: TagDecoderMap = new Map([
   [
     TAGS.ENCODED_CBOR_DATA,
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    ({ contents }: { contents: any }) => decode(contents, { tags: tags }),
+    (tag: { contents: unknown }) =>
+      decode(tag.contents as Uint8Array, { tags: tags }),
   ],
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  [TAGS.FULL_DATE, ({ contents }: { contents: any }) => contents],
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  [TAGS.DATE_TIME, ({ contents }: { contents: any }) => contents],
+  [TAGS.FULL_DATE, (tag: { contents: unknown }) => tag.contents],
+  [TAGS.DATE_TIME, (tag: { contents: unknown }) => tag.contents],
 ]);
 
 function issuerSignedDecoder(credential: Uint8Array): TaggedIssuerSigned;
 
 function issuerSignedDecoder(
   credential: Uint8Array,
-  tags: Map<number, (value: any) => any>,
+  tags: TagDecoderMap,
 ): IssuerSigned;
 
 function issuerSignedDecoder(
   credential: Uint8Array,
-  tags?: Map<number, (value: any) => any>,
+  tags?: TagDecoderMap,
 ): TaggedIssuerSigned | IssuerSigned {
   try {
     return decode(credential, tags ? { tags } : undefined);
   } catch (error) {
-    throw new MDLValidationError(
+    throw new MdocValidationError(
       `Failed to decode CBOR encoded credential - ${errorMessage(error)}`,
       "INVALID_CBOR",
     );
