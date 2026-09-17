@@ -15,7 +15,7 @@ import { validateDigestIds } from "./validateDigestIds";
  * @param credential - Base64url-encoded credential.
  * @returns true if the credential is valid; otherwise, throws an error.
  */
-export async function isValidCredential(credential: string): Promise<boolean> {
+export async function validateMdoc(credential: string): Promise<boolean> {
   const cborBytes = base64UrlToUint8Array(credential);
 
   /*

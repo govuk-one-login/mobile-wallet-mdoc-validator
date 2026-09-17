@@ -1,4 +1,4 @@
-import { isValidCredential } from "./isValidCredential";
+import { validateMdoc } from "./validateMdoc";
 import { TestMdocBuilder } from "./TestMdocBuilder";
 import { MdocValidationError } from "./MdocValidationError";
 import { Tag } from "cbor2";
@@ -7,7 +7,7 @@ import * as ajvModule from "../ajv/ajvInstance";
 import { X509Certificate } from "node:crypto";
 import { ErrorObject, ValidateFunction } from "ajv";
 
-describe("isValidCredential", () => {
+describe("validateMdoc", () => {
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(new Date("2025-09-10T15:30:00Z"));
   });
@@ -22,7 +22,7 @@ describe("isValidCredential", () => {
     it("should throw MdocValidationError for invalid base64url encoding", async () => {
       expect.assertions(2);
       try {
-        await isValidCredential("invalid@base64url!");
+        await validateMdoc("invalid@base64url!");
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -34,7 +34,7 @@ describe("isValidCredential", () => {
     it("should throw MdocValidationError for invalid CBOR encoding", async () => {
       expect.assertions(2);
       try {
-        await isValidCredential(base64url.encode("invalidCbor"));
+        await validateMdoc(base64url.encode("invalidCbor"));
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -52,7 +52,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
         expect((error as Error).message).toContain(
@@ -68,7 +68,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -80,7 +80,7 @@ describe("isValidCredential", () => {
     it("should throw MdocValidationError when MobileSecurityObjectBytes missing tag '24'", async () => {
       const credential = new TestMdocBuilder().withUntaggedMsoBytes().build();
 
-      await expect(isValidCredential(credential)).rejects.toThrow(
+      await expect(validateMdoc(credential)).rejects.toThrow(
         "MobileSecurityObjectBytes missing tag",
       );
     });
@@ -94,7 +94,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -112,7 +112,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -130,7 +130,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -166,7 +166,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -200,7 +200,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -234,7 +234,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -261,7 +261,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -280,7 +280,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -297,7 +297,7 @@ describe("isValidCredential", () => {
 
       expect.assertions(2);
       try {
-        await isValidCredential(credential);
+        await validateMdoc(credential);
       } catch (error) {
         expect(error).toBeInstanceOf(MdocValidationError);
         expect((error as Error).message).toBe(
@@ -316,7 +316,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -332,7 +332,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -348,7 +348,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -364,7 +364,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -384,7 +384,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -400,7 +400,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -416,7 +416,7 @@ describe("isValidCredential", () => {
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toEqual(
@@ -456,7 +456,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe("Signature not verified");
@@ -495,7 +495,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -532,7 +532,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -569,7 +569,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -599,7 +599,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -615,7 +615,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -634,7 +634,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -652,7 +652,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -668,7 +668,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -684,7 +684,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -700,7 +700,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -716,7 +716,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -733,7 +733,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe("Invalid elliptic curve key");
@@ -752,7 +752,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -771,7 +771,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -789,7 +789,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -808,7 +808,7 @@ h6XK6xERRLkY5jjINTt8TkU=
 
         expect.assertions(2);
         try {
-          await isValidCredential(credential);
+          await validateMdoc(credential);
         } catch (error) {
           expect(error).toBeInstanceOf(MdocValidationError);
           expect((error as Error).message).toBe(
@@ -824,7 +824,7 @@ h6XK6xERRLkY5jjINTt8TkU=
           })
           .build();
 
-        expect(await isValidCredential(credential)).toBe(true);
+        expect(await validateMdoc(credential)).toBe(true);
       });
 
       it("should not throw when 'expectedUpdate' equals 'validUntil'", async () => {
@@ -834,13 +834,13 @@ h6XK6xERRLkY5jjINTt8TkU=
           })
           .build();
 
-        expect(await isValidCredential(credential)).toBe(true);
+        expect(await validateMdoc(credential)).toBe(true);
       });
     });
   });
 
   it("should return true when credential is valid", async () => {
     const credential = new TestMdocBuilder().build();
-    expect(await isValidCredential(credential)).toBe(true);
+    expect(await validateMdoc(credential)).toBe(true);
   });
 });

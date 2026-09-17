@@ -1,2 +1,2 @@
-export { isValidCredential as validateMdoc } from "./mdoc/isValidCredential";
+export { validateMdoc } from "./mdoc/validateMdoc";
 export { MdocValidationError } from "./mdoc/MdocValidationError";
