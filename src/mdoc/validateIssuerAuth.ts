@@ -5,7 +5,6 @@ import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema
 import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { IssuerAuth, TaggedIssuerSignedItem } from "./types/issuerSigned";
-import { NameSpace } from "./types/namespaces";
 import {
   MobileSecurityObject,
   ValidityInfo,
@@ -30,7 +29,7 @@ const tags: TagDecoderMap = new Map([
 
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
-  namespaces: Record<NameSpace, Tag[]>,
+  namespaces: Record<string, Tag[]>,
 ) {
   const protectedHeader = issuerAuth[0];
   validateProtectedHeader(protectedHeader);
@@ -110,7 +109,7 @@ function validateUnprotectedHeader(
 
 async function validatePayload(
   payload: Uint8Array,
-  nameSpaces: Record<NameSpace, Tag[]>,
+  nameSpaces: Record<string, Tag[]>,
 ) {
   const mobileSecurityObject: MobileSecurityObject = decode(payload, {
     tags: tags,
@@ -150,7 +149,7 @@ function validateMobileSecurityObject(
 
 function validateDigests(
   valueDigests: ValueDigests,
-  nameSpaces: Record<NameSpace, Tag[]>,
+  nameSpaces: Record<string, Tag[]>,
 ): void {
   for (const [namespace, items] of Object.entries(nameSpaces)) {
     for (const taggedIssuerSignedItemBytes of items) {

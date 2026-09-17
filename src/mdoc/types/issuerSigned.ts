@@ -1,5 +1,4 @@
 import { Tag } from "cbor2";
-import { NameSpace } from "./namespaces";
 
 export type IssuerAuth = [
   protectedHeader: Uint8Array,
@@ -24,9 +23,9 @@ export interface TaggedIssuerSignedItem extends Omit<
 
 export interface IssuerSigned {
   issuerAuth: IssuerAuth;
-  nameSpaces: Record<NameSpace, IssuerSignedItem[]>;
+  nameSpaces: Record<string, IssuerSignedItem[]>;
 }
 
 export interface TaggedIssuerSigned extends Omit<IssuerSigned, "nameSpaces"> {
-  nameSpaces: Record<NameSpace, Tag[]>;
+  nameSpaces: Record<string, Tag[]>;
 }

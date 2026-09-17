@@ -1,9 +1,8 @@
 import { MdocValidationError } from "./MdocValidationError";
 import { IssuerSignedItem } from "./types/issuerSigned";
-import { NameSpace } from "./types/namespaces";
 
 export function validateDigestIds(
-  namespaces: Record<NameSpace, IssuerSignedItem[]>,
+  namespaces: Record<string, IssuerSignedItem[]>,
 ) {
   for (const namespace of Object.keys(namespaces)) {
     const digestIds = namespaces[namespace]?.map((item) => item.digestID);
