@@ -1,9 +1,9 @@
 import { encode, Tag } from "cbor2";
-import { validateDigestIds } from "./validateDigestIds";
+import { validateNamespaces } from "./validateNamespaces";
 import { MdocValidationError } from "./MdocValidationError";
 import { TAGS } from "./constants/tags";
 
-describe("validateDigestIds", () => {
+describe("validateNamespaces", () => {
   function createTaggedItem(digestID: number, elementIdentifier: string): Tag {
     return new Tag(
       24,
@@ -25,7 +25,7 @@ describe("validateDigestIds", () => {
 
     expect.assertions(2);
     try {
-      validateDigestIds(namespaces);
+      validateNamespaces(namespaces);
     } catch (error) {
       expect(error).toBeInstanceOf(MdocValidationError);
       expect((error as Error).message).toBe(
@@ -43,7 +43,7 @@ describe("validateDigestIds", () => {
 
     expect.assertions(2);
     try {
-      validateDigestIds(namespaces);
+      validateNamespaces(namespaces);
     } catch (error) {
       expect(error).toBeInstanceOf(MdocValidationError);
       expect((error as Error).message).toContain(
@@ -61,7 +61,7 @@ describe("validateDigestIds", () => {
     };
 
     expect(() => {
-      validateDigestIds(namespaces);
+      validateNamespaces(namespaces);
     }).not.toThrow();
   });
 
@@ -75,7 +75,7 @@ describe("validateDigestIds", () => {
 
     expect.assertions(2);
     try {
-      validateDigestIds(namespaces);
+      validateNamespaces(namespaces);
     } catch (error) {
       expect(error).toBeInstanceOf(MdocValidationError);
       expect((error as Error).message).toBe(

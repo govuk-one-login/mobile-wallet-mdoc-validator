@@ -6,7 +6,7 @@ import { TAGS } from "./constants/tags";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { parseSchema } from "./parseSchema";
-import { validateDigestIds } from "./validateDigestIds";
+import { validateNamespaces } from "./validateNamespaces";
 
 /**
  * Validates a base64url-encoded mdoc credential string.
@@ -23,7 +23,7 @@ export async function validateMdoc(credential: string): Promise<boolean> {
     "IssuerSigned",
   );
 
-  validateDigestIds(issuerSigned.nameSpaces);
+  validateNamespaces(issuerSigned.nameSpaces);
 
   await validateIssuerAuth(issuerSigned.issuerAuth, issuerSigned.nameSpaces);
 

@@ -6,7 +6,7 @@ import {
   NameSpaces,
 } from "./schemas/issuerSignedSchema";
 
-export function validateDigestIds(namespaces: NameSpaces) {
+export function validateNamespaces(namespaces: NameSpaces) {
   for (const [namespace, items] of Object.entries(namespaces)) {
     const digestIds = items.map((taggedItem) => {
       if (!(taggedItem.contents instanceof Uint8Array)) {
