@@ -37,6 +37,10 @@ export const issuerSignedSchema = z
       }),
     issuerAuth: z.tuple([
       z.instanceof(Uint8Array),
+      // Unprotected header. Values are currently constrained to bstr, which only
+      // supports a single-certificate x5chain (COSE label 33). A chain with an
+      // intermediate encodes x5chain as an array of bstr and will be rejected here —
+      // widen the value type to z.unknown() when multi-cert chains are supported.
       z.map(z.number(), z.instanceof(Uint8Array)),
       z.instanceof(Uint8Array),
       z.instanceof(Uint8Array),
