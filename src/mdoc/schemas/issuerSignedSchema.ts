@@ -10,10 +10,9 @@ export const issuerSignedItemSchema = z
       .nonnegative()
       .lt(2 ** 31),
     elementIdentifier: z.string(),
-    elementValue: z.custom(
-      (val) => val !== undefined,
-      "elementValue is required",
-    ),
+    elementValue: z.unknown().refine((val) => val !== undefined, {
+      message: "elementValue is required",
+    }),
     random: z.instanceof(Uint8Array).refine((r) => r.length >= 16, {
       message: "random must be at least 16 bytes",
     }),
