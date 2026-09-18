@@ -33,3 +33,33 @@ export function parseNamespaces(namespaces: NameSpaces): ParsedNamespaces {
   }
   return parsed;
 }
+
+export function validateDigestIdsUnique(parsed: ParsedNamespaces): void {
+  for (const [namespace, items] of Object.entries(parsed)) {
+    const seen = new Set<number>();
+    for (const {item} of items) {
+      if (seen.has(item.digestID)) {
+        throw new MdocValidationError(
+          `Duplicate digest ID ${item.digestID} in namespace ${namespace}`,
+          "INVALID_DIGEST_IDS",
+        );
+      }
+      seen.add(item.digestID);
+    }
+  }
+}
+
+export function validateElementIdentifiersUnique(parsed: ParsedNamespaces): void {
+  for (const [namespace, items] of Object.entries(parsed)) {
+    const seen = new Set<string>();
+    for (const { item } of items) {
+      if (seen.has(item.elementIdentifier)) {
+        throw new MdocValidationError(
+          `Duplicate element identifier ${item.elementIdentifier} in namespace ${namespace}`,
+          "INVALID_ELEMENT_IDENTIFIERS",
+        );
+      }
+      seen.add(item.elementIdentifier);
+    }
+  }
+}
