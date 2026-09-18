@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { MdocValidationError } from "./MdocValidationError";
 
-export function parseSchema<T>(
-  schema: z.ZodType<T>,
+export function parseSchema<S extends z.ZodTypeAny>(
+  schema: S,
   data: unknown,
   label: string,
-): T {
+): z.infer<S> {
   const result = schema.safeParse(data);
   if (result.success) return result.data;
 

@@ -1,6 +1,7 @@
 import { Tag } from "cbor2";
 import { z } from "zod";
 import { TAGS } from "../constants/tags";
+import {cborEncodedDataTag} from "./cborEncodedDataSchema";
 
 export const issuerSignedItemSchema = z
   .object({
@@ -18,12 +19,6 @@ export const issuerSignedItemSchema = z
     }),
   })
   .strict();
-
-const cborEncodedDataTag = z
-  .instanceof(Tag)
-  .refine((tag) => tag.tag === TAGS.ENCODED_CBOR_DATA, {
-    message: "must be tagged with 24 (encoded CBOR data)",
-  });
 
 export const issuerSignedSchema = z
   .object({

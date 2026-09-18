@@ -10,33 +10,32 @@ import {
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { parseSchema } from "./parseSchema";
 import {
-  IssuerAuth,
-  issuerSignedItemSchema,
-  NameSpaces,
-} from "./schemas/issuerSignedSchema";
-import {
   COSE_ALGORITHMS,
   COSE_ELLIPTIC_CURVES,
   COSE_HEADER_PARAMETERS,
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
+import { decodeCbor } from "./decodeCbor";
+import {IssuerAuth, NameSpaces} from "./schemas/issuerSignedSchema";
 
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
-  namespaces: NameSpaces,
-) {
-  const protectedHeader = issuerAuth[0];
-  validateProtectedHeader(protectedHeader);
+  nameSpaces: NameSpaces,
+): Promise<void> {
+  // COSE_Sign1: [protected header, unprotected header, payload, signature]
+  const [protectedHeader, unprotectedHeader, payload, signature] = issuerAuth;
 
-  const unprotectedHeader = issuerAuth[1];
+  validateProtectedHeader(protectedHeader);
   const certificate = validateUnprotectedHeader(unprotectedHeader);
 
-  const payload = issuerAuth[2];
-  await validatePayload(payload, namespaces);
-
-  const signature = issuerAuth[3];
+  // Everything below operates on the MSO, so the signature must be verified first.
   verifySignature(certificate.publicKey, protectedHeader, payload, signature);
+
+  const mso = parseMobileSecurityObject(payload);
+  validateValidityInfo(mso.validityInfo);
+  validateDigests(mso.valueDigests, nameSpaces);
+  await validateDeviceKey(mso.deviceKeyInfo.deviceKey);
 }
 
 function validateProtectedHeader(protectedHeader: Uint8Array): void {
@@ -102,63 +101,126 @@ function validateUnprotectedHeader(
   return certificate;
 }
 
-async function validatePayload(payload: Uint8Array, nameSpaces: NameSpaces) {
-  const msoBytes = mobileSecurityObjectBytesSchema.parse(decode(payload));
-  const mobileSecurityObject = validateMobileSecurityObject(
-    decode(msoBytes.contents),
-  );
-  validateDigests(mobileSecurityObject.valueDigests, nameSpaces);
-  await validateDeviceKey(mobileSecurityObject.deviceKeyInfo.deviceKey);
-  validateValidityInfo(mobileSecurityObject.validityInfo);
-}
-
-function validateMobileSecurityObject(data: unknown): MobileSecurityObject {
-  return parseSchema(mobileSecurityObjectSchema, data, "MobileSecurityObject");
-}
-
-function validateDigests(
-  valueDigests: ValueDigests,
-  nameSpaces: NameSpaces,
+function verifySignature(
+  publicKey: KeyObject,
+  protectedHeader: Uint8Array,
+  payload: Uint8Array,
+  signature: Uint8Array,
 ): void {
-  for (const [namespace, items] of Object.entries(nameSpaces)) {
-    for (const taggedIssuerSignedItemBytes of items) {
-      const encodedTaggedIssuerSignedItemBytes = encode(
-        taggedIssuerSignedItemBytes,
+  const sigStructure = [
+    "Signature1",
+    protectedHeader,
+    new Uint8Array(),
+    payload,
+  ];
+
+  const toBeSigned = encode(sigStructure);
+  try {
+    const outcome = verify(
+      "sha256",
+      toBeSigned,
+      { key: publicKey, dsaEncoding: "ieee-p1363" },
+      signature,
+    );
+    if (!outcome) {
+      throw new MdocValidationError(
+        "Signature not verified",
+        "INVALID_SIGNATURE",
       );
-      const calculatedDigest = createHash("sha256")
-        .update(encodedTaggedIssuerSignedItemBytes)
-        .digest();
+    }
+  } catch (error) {
+    if (error instanceof MdocValidationError) {
+      throw error;
+    }
+    throw new MdocValidationError(
+      `Signature could not be verified - ${errorMessage(error)} `,
+      "INVALID_SIGNATURE",
+    );
+  }
+}
 
-      if (!(taggedIssuerSignedItemBytes.contents instanceof Uint8Array)) {
-        throw new MdocValidationError(
-          `IssuerSignedItem contents is not a Uint8Array in namespace ${namespace}`,
-          "INVALID_SCHEMA",
-        );
-      }
+function parseMobileSecurityObject(payload: Uint8Array): MobileSecurityObject {
+  const msoBytes = parseSchema(
+    mobileSecurityObjectBytesSchema,
+    decodeCbor(payload, "MobileSecurityObjectBytes"),
+    "MobileSecurityObjectBytes",
+  );
+  return parseSchema(
+    mobileSecurityObjectSchema,
+    decodeCbor(msoBytes.contents, "MobileSecurityObject"),
+    "MobileSecurityObject",
+  );
+}
 
-      const issuedSignedItem = parseSchema(
-        issuerSignedItemSchema,
-        decode(taggedIssuerSignedItemBytes.contents),
-        "IssuerSignedItem",
+function validateValidityInfo(validityInfo: ValidityInfo): void {
+  const errors: string[] = [];
+  const now = new Date();
+
+  const signed = String(validityInfo.signed.contents);
+  const validFrom = String(validityInfo.validFrom.contents);
+  const validUntil = String(validityInfo.validUntil.contents);
+
+  const signedDate = new Date(signed);
+  const validFromDate = new Date(validFrom);
+  const validUntilDate = new Date(validUntil);
+
+  if (signedDate > now) errors.push(`'signed' (${signed}) must be in the past`);
+  if (validFromDate > now)
+    errors.push(`'validFrom' (${validFrom}) must be in the past`);
+  if (validUntilDate <= now)
+    errors.push(`'validUntil' (${validUntil}) must be in the future`);
+  if (validFromDate < signedDate)
+    errors.push(
+      `'validFrom' (${validUntil}) must be equal or later than 'signed' (${signed})`,
+    );
+
+  if (validityInfo.expectedUpdate) {
+    const expectedUpdate = String(validityInfo.expectedUpdate.contents);
+    const expectedUpdateDate = new Date(expectedUpdate);
+    if (expectedUpdateDate > validUntilDate)
+      errors.push(
+        `'expectedUpdate' (${expectedUpdate}) must be less than or equal to 'validUntil' (${validUntil})`,
       );
-      const digestID = issuedSignedItem.digestID;
+  }
 
-      const msoDigests = valueDigests[namespace];
-      if (!msoDigests) {
+  if (errors.length !== 0) {
+    throw new MdocValidationError(
+      `One or more dates are invalid - ${errorMessage(errors)}`,
+      "INVALID_VALIDITY_INFO",
+    );
+  }
+}
+
+function validateDigestsMatchMso(
+  parsed: ParsedNamespaces,
+  valueDigests: ValueDigests,
+): void {
+  for (const [namespace, items] of Object.entries(parsed)) {
+    const msoDigests = valueDigests[namespace];
+    if (!msoDigests) {
+      throw new MdocValidationError(
+        `No digests found for namespace ${namespace}`,
+        "INVALID_DIGESTS",
+      );
+    }
+
+    // One-directional: every presented item must match an MSO digest.
+    // MSO digests with no presented item are expected — that's selective disclosure.
+    for (const { tag, item } of items) {
+      const expectedDigest = msoDigests.get(item.digestID);
+      if (expectedDigest === undefined) {
         throw new MdocValidationError(
-          `No digests found for namespace ${namespace}`,
+          `No digest found for digest ID ${item.digestID} in MSO namespace ${namespace}`,
           "INVALID_DIGESTS",
         );
       }
-      const expectedDigest = msoDigests.get(digestID);
-      if (!expectedDigest) {
+
+      const calculatedDigest = createHash("sha256")
+        .update(encode(tag))
+        .digest();
+      if (!calculatedDigest.equals(Buffer.from(expectedDigest))) {
         throw new MdocValidationError(
-          `No digest found for digest ID ${digestID.toString()} in MSO namespace ${namespace}`,
-        );
-      }
-      if (!calculatedDigest.equals(expectedDigest)) {
-        throw new MdocValidationError(
-          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID.toString()} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
+          `Digest mismatch for element identifier ${item.elementIdentifier} with digest ID ${item.digestID} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
           "INVALID_DIGESTS",
         );
       }
@@ -237,83 +299,6 @@ async function validateDeviceKey(
     throw new MdocValidationError(
       `Invalid elliptic curve key`,
       "INVALID_DEVICE_KEY",
-    );
-  }
-}
-
-function verifySignature(
-  publicKey: KeyObject,
-  protectedHeader: Uint8Array,
-  payload: Uint8Array,
-  signature: Uint8Array,
-): void {
-  const sigStructure = [
-    "Signature1",
-    protectedHeader,
-    new Uint8Array(),
-    payload,
-  ];
-
-  const toBeSigned = encode(sigStructure);
-  try {
-    const outcome = verify(
-      "sha256",
-      toBeSigned,
-      { key: publicKey, dsaEncoding: "ieee-p1363" },
-      signature,
-    );
-    if (!outcome) {
-      throw new MdocValidationError(
-        "Signature not verified",
-        "INVALID_SIGNATURE",
-      );
-    }
-  } catch (error) {
-    if (error instanceof MdocValidationError) {
-      throw error;
-    }
-    throw new MdocValidationError(
-      `Signature could not be verified - ${errorMessage(error)} `,
-      "INVALID_SIGNATURE",
-    );
-  }
-}
-
-function validateValidityInfo(validityInfo: ValidityInfo): void {
-  const errors: string[] = [];
-  const now = new Date();
-
-  const signed = String(validityInfo.signed.contents);
-  const validFrom = String(validityInfo.validFrom.contents);
-  const validUntil = String(validityInfo.validUntil.contents);
-
-  const signedDate = new Date(signed);
-  const validFromDate = new Date(validFrom);
-  const validUntilDate = new Date(validUntil);
-
-  if (signedDate > now) errors.push(`'signed' (${signed}) must be in the past`);
-  if (validFromDate > now)
-    errors.push(`'validFrom' (${validFrom}) must be in the past`);
-  if (validUntilDate <= now)
-    errors.push(`'validUntil' (${validUntil}) must be in the future`);
-  if (validFromDate < signedDate)
-    errors.push(
-      `'validFrom' (${validUntil}) must be equal or later than 'signed' (${signed})`,
-    );
-
-  if (validityInfo.expectedUpdate) {
-    const expectedUpdate = String(validityInfo.expectedUpdate.contents);
-    const expectedUpdateDate = new Date(expectedUpdate);
-    if (expectedUpdateDate > validUntilDate)
-      errors.push(
-        `'expectedUpdate' (${expectedUpdate}) must be less than or equal to 'validUntil' (${validUntil})`,
-      );
-  }
-
-  if (errors.length !== 0) {
-    throw new MdocValidationError(
-      `One or more dates are invalid - ${errorMessage(errors)}`,
-      "INVALID_VALIDITY_INFO",
     );
   }
 }
