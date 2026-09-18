@@ -10,7 +10,7 @@ export const issuerSignedItemSchema = z
       .nonnegative()
       .lt(2 ** 31),
     elementIdentifier: z.string(),
-    elementValue: z.unknown().refine((val) => val !== undefined, {
+    elementValue: z.custom<unknown>((val) => val !== undefined, {
       message: "elementValue is required",
     }),
     random: z.instanceof(Uint8Array).refine((r) => r.length >= 16, {
