@@ -1,7 +1,9 @@
 import { encode } from "cbor2";
 import { base64url } from "jose";
-import { TestMdocBuilder } from "./TestMdocBuilder";
+import { TestMdocBuilder } from "./testing/TestMdocBuilder";
 import { validateMdoc } from "./validateMdoc";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 describe("validateMdoc", () => {
   beforeEach(() => {
@@ -18,9 +20,14 @@ describe("validateMdoc", () => {
     ).resolves.toBeUndefined();
   });
 
-  it.todo(
-    "accepts a credential from an external issuer (i.e. not TestMdocBuilder)",
-  );
+  it("accepts a valid credential from an external issuer (not built by TestMdocBuilder)", async () => {
+    const EXTERNAL_CREDENTIAL = readFileSync(
+      join(__dirname, "testing/fixtures", "external-credential.txt"),
+      "utf8",
+    ).trim();
+    jest.useFakeTimers().setSystemTime(new Date("2026-09-22T15:30:00Z"));
+    await expect(validateMdoc(EXTERNAL_CREDENTIAL)).resolves.toBeUndefined();
+  });
 
   it("rejects invalid base64url", async () => {
     await expect(validateMdoc("invalid@base64url!")).rejects.toThrow(
@@ -55,6 +62,6 @@ describe("validateMdoc", () => {
       validateMdoc(
         new TestMdocBuilder().withProtectedHeader(new Map().set(1, 7)).build(),
       ),
-    ).rejects.toThrow("dsadsa");
+    ).rejects.toThrow('Protected header "alg" must be -7 (ES256)');
   });
 });

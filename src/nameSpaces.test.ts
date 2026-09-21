@@ -20,7 +20,7 @@ const nameSpaces = (value: Record<string, Tag[]>) =>
 
 describe("validateNamespaces", () => {
   it("accepts unique digest IDs and element identifiers", () => {
-    expect(() =>
+    expect(() => {
       validateNamespaces(
         nameSpaces({
           "org.test.namespace.1": [
@@ -28,13 +28,13 @@ describe("validateNamespaces", () => {
             taggedIssuerSignedItem(1, "given_name"),
           ],
         }),
-      ),
-    ).not.toThrow();
+      );
+    }).not.toThrow();
   });
 
   describe("digest IDs", () => {
     it("rejects duplicates within a namespace", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [
@@ -42,23 +42,23 @@ describe("validateNamespaces", () => {
               taggedIssuerSignedItem(0, "given_name"),
             ],
           }),
-        ),
-      ).toThrow(MdocValidationError);
+        );
+      }).toThrow(MdocValidationError);
     });
 
     it("allows the same digest ID in different namespaces", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [taggedIssuerSignedItem(0, "family_name")],
             "org.test.namespace.2": [taggedIssuerSignedItem(0, "title")],
           }),
-        ),
-      ).not.toThrow();
+        );
+      }).not.toThrow();
     });
 
     it("names the duplicate ID and its namespace in the message", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [taggedIssuerSignedItem(0, "family_name")],
@@ -67,14 +67,14 @@ describe("validateNamespaces", () => {
               taggedIssuerSignedItem(7, "portrait"),
             ],
           }),
-        ),
-      ).toThrow("Duplicate digest ID 7 in namespace org.test.namespace.2");
+        );
+      }).toThrow("Duplicate digest ID 7 in namespace org.test.namespace.2");
     });
   });
 
   describe("element identifiers", () => {
     it("rejects duplicates within a namespace", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [
@@ -82,23 +82,23 @@ describe("validateNamespaces", () => {
               taggedIssuerSignedItem(1, "family_name"),
             ],
           }),
-        ),
-      ).toThrow(MdocValidationError);
+        );
+      }).toThrow(MdocValidationError);
     });
 
     it("allows the same element identifier in different namespaces", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [taggedIssuerSignedItem(0, "issue_date")],
             "org.test.namespace.2": [taggedIssuerSignedItem(1, "issue_date")],
           }),
-        ),
-      ).not.toThrow();
+        );
+      }).not.toThrow();
     });
 
     it("names the duplicate identifier and its namespace in the message", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [taggedIssuerSignedItem(0, "family_name")],
@@ -107,8 +107,8 @@ describe("validateNamespaces", () => {
               taggedIssuerSignedItem(2, "portrait"),
             ],
           }),
-        ),
-      ).toThrow(
+        );
+      }).toThrow(
         "Duplicate element identifier portrait in namespace org.test.namespace.2",
       );
     });
@@ -116,27 +116,27 @@ describe("validateNamespaces", () => {
 
   describe("item parsing", () => {
     it("rejects an item that does not match the schema", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [
               new Tag(TAGS.ENCODED_CBOR_DATA, encode({ digestID: 0 })),
             ],
           }),
-        ),
-      ).toThrow(/IssuerSignedItem does not comply with schema/);
+        );
+      }).toThrow(/IssuerSignedItem does not comply with schema/);
     });
 
     it("rejects item contents that are not valid CBOR", () => {
-      expect(() =>
+      expect(() => {
         validateNamespaces(
           nameSpaces({
             "org.test.namespace.1": [
               new Tag(TAGS.ENCODED_CBOR_DATA, new Uint8Array([0xa1, 0x01])),
             ],
           }),
-        ),
-      ).toThrow(/IssuerSignedItem is not valid CBOR/);
+        );
+      }).toThrow(/IssuerSignedItem is not valid CBOR/);
     });
   });
 });

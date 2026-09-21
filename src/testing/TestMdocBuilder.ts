@@ -6,18 +6,21 @@ import {
 } from "node:crypto";
 import { encode, Tag } from "cbor2";
 import { base64url } from "jose";
-import { TAGS } from "./constants/tags";
+import { TAGS } from "../constants/tags";
 import {
   COSE_ALGORITHMS,
   COSE_ELLIPTIC_CURVES,
   COSE_HEADER_PARAMETERS,
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
-} from "./constants/cose";
-import { IssuerSignedItem } from "./schemas/issuerSignedItemSchema";
-import { IssuerSigned, issuerSignedSchema } from "./schemas/issuerSignedSchema";
-import { parseSchema } from "./parseSchema";
-import { decodeCbor } from "./decodeCbor";
+} from "../constants/cose";
+import { IssuerSignedItem } from "../schemas/issuerSignedItemSchema";
+import {
+  IssuerSigned,
+  issuerSignedSchema,
+} from "../schemas/issuerSignedSchema";
+import { parseSchema } from "../parseSchema";
+import { decodeCbor } from "../decodeCbor";
 
 export class TestMdocBuilder {
   private readonly namespaces: Map<string, IssuerSignedItem[]>;

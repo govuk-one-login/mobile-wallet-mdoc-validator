@@ -129,13 +129,14 @@ describe("issuerSignedItemSchema", () => {
       ).toThrow();
     });
 
-    it.each(["digestID", "elementIdentifier", "elementValue", "random"])(
-      "rejects a missing %s",
-      (key) => {
-        const item: Record<string, unknown> = validIssuerSignedItem();
-        delete item[key];
-        expect(() => parseIssuerSignedItem(item)).toThrow();
-      },
-    );
+    it.each([
+      "digestID",
+      "elementIdentifier",
+      "elementValue",
+      "random",
+    ] as const)("rejects a missing %s", (key) => {
+      const { [key]: _removed, ...item } = validIssuerSignedItem();
+      expect(() => parseIssuerSignedItem(item)).toThrow();
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { Tag } from "cbor2";
 import { MdocValidationError } from "./MdocValidationError";
-import { TestMdocBuilder } from "./TestMdocBuilder";
+import { TestMdocBuilder } from "./testing/TestMdocBuilder";
 import { validateIssuerAuth } from "./issuerAuth";
 
 const validate = (builder: TestMdocBuilder) => {

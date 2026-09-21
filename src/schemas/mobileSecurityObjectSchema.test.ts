@@ -58,9 +58,8 @@ describe("mobileSecurityObjectSchema", () => {
     "docType",
     "validityInfo",
     "status",
-  ])("rejects a missing %s", (key) => {
-    const mso: Record<string, unknown> = validMso();
-    delete mso[key];
+  ] as const)("rejects a missing %s", (key) => {
+    const { [key]: _removed, ...mso } = validMso();
     expect(() => parseMso(mso)).toThrow();
   });
 
@@ -245,11 +244,10 @@ describe("mobileSecurityObjectSchema", () => {
       ).not.toThrow();
     });
 
-    it.each(["signed", "validFrom", "validUntil"])(
+    it.each(["signed", "validFrom", "validUntil"] as const)(
       "rejects a missing %s",
       (key) => {
-        const validityInfo: Record<string, unknown> = validMso().validityInfo;
-        delete validityInfo[key];
+        const { [key]: _removed, ...validityInfo } = validMso().validityInfo;
         expect(() => parseMso(withMso({ validityInfo }))).toThrow();
       },
     );
@@ -297,15 +295,16 @@ describe("mobileSecurityObjectSchema", () => {
       ).toThrow();
     });
 
-    it.each(["idx", "uri"])("rejects a missing %s in status_list", (key) => {
-      const statusList: Record<string, unknown> = {
-        ...validMso().status.status_list,
-      };
-      delete statusList[key];
-      expect(() =>
-        parseMso(withMso({ status: { status_list: statusList } })),
-      ).toThrow();
-    });
+    it.each(["idx", "uri"] as const)(
+      "rejects a missing %s in status_list",
+      (key) => {
+        const { [key]: _removed, ...statusList } =
+          validMso().status.status_list;
+        expect(() =>
+          parseMso(withMso({ status: { status_list: statusList } })),
+        ).toThrow();
+      },
+    );
 
     it("rejects a non-numeric idx", () => {
       expect(() =>
