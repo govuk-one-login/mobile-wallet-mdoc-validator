@@ -14,7 +14,10 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-import { IssuerSignedItem } from "./schemas/issuerSignedSchema";
+import {IssuerSignedItem} from "./schemas/issuerSignedItemSchema";
+import {IssuerSigned, issuerSignedSchema} from "./schemas/issuerSignedSchema";
+import {parseSchema} from "./parseSchema";
+import {decodeCbor} from "./decodeCbor";
 
 export class TestMdocBuilder {
   private readonly namespaces: Map<string, IssuerSignedItem[]>;
@@ -161,15 +164,12 @@ export class TestMdocBuilder {
     return base64url.encode(encode(result));
   }
 
-  withDigestId(elementIdentifier: string, digestId: number) {
-    for (const items of this.namespaces.values()) {
-      const item = items.find((i) => i.elementIdentifier === elementIdentifier);
-      if (item) {
-        item.digestID = digestId;
-        return this;
-      }
-    }
-    return this;
+  buildIssuerSigned(): IssuerSigned {
+    return parseSchema(
+      issuerSignedSchema,
+      decodeCbor(base64url.decode(this.build()), "IssuerSigned"),
+      "IssuerSigned",
+    );
   }
 
   withoutDigest(elementIdentifier: string) {
