@@ -1,14 +1,10 @@
-import { decode, Tag } from "cbor2";
 import { base64url } from "jose";
 import "cbor2/types";
-import { validateIssuerAuth } from "./validateIssuerAuth";
-import { TAGS } from "./constants/tags";
+import { validateIssuerAuth } from "./issuerAuth";
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 import { issuerSignedSchema } from "./schemas/issuerSignedSchema";
 import { parseSchema } from "./parseSchema";
-import {
-  validateNamespaces,
-} from "./issuerSignedItems";
+import { validateNamespaces } from "./nameSpaces";
 import { decodeCbor } from "./decodeCbor";
 
 /**

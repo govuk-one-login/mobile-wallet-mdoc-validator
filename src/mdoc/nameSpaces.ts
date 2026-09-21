@@ -1,10 +1,11 @@
 import { MdocValidationError } from "./MdocValidationError";
 import { parseSchema } from "./parseSchema";
 import { decodeCbor } from "./decodeCbor";
+import { NameSpaces } from "./schemas/issuerSignedSchema";
 import {
-  NameSpaces,
-} from "./schemas/issuerSignedSchema";
-import {IssuerSignedItem, issuerSignedItemSchema} from "./schemas/issuerSignedItemSchema";
+  IssuerSignedItem,
+  issuerSignedItemSchema,
+} from "./schemas/issuerSignedItemSchema";
 
 function parseNamespaces(
   namespaces: NameSpaces,
@@ -32,7 +33,7 @@ export function validateNamespaces(namespaces: NameSpaces): void {
     for (const item of items) {
       if (digestIds.has(item.digestID)) {
         throw new MdocValidationError(
-          `Duplicate digest ID ${item.digestID} in namespace ${namespace}`,
+          `Duplicate digest ID ${item.digestID.toString()} in namespace ${namespace}`,
           "INVALID_DIGEST_IDS",
         );
       }

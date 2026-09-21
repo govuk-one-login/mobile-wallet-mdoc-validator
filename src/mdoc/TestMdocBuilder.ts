@@ -14,10 +14,10 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-import {IssuerSignedItem} from "./schemas/issuerSignedItemSchema";
-import {IssuerSigned, issuerSignedSchema} from "./schemas/issuerSignedSchema";
-import {parseSchema} from "./parseSchema";
-import {decodeCbor} from "./decodeCbor";
+import { IssuerSignedItem } from "./schemas/issuerSignedItemSchema";
+import { IssuerSigned, issuerSignedSchema } from "./schemas/issuerSignedSchema";
+import { parseSchema } from "./parseSchema";
+import { decodeCbor } from "./decodeCbor";
 
 export class TestMdocBuilder {
   private readonly namespaces: Map<string, IssuerSignedItem[]>;
@@ -217,6 +217,26 @@ export class TestMdocBuilder {
     }
     return this;
   }
+
+  withMismatchedSigningCertificate(): this {
+    return this.withUnprotectedHeader(
+      new Map().set(
+        COSE_HEADER_PARAMETERS.X5_CHAIN,
+        new Uint8Array(UNRELATED_SIGNING_CERTIFICATE.raw),
+      ),
+    );
+  }
+
+  withDuplicateItem(elementIdentifier: string): this {
+    for (const items of this.namespaces.values()) {
+      const item = items.find((i) => i.elementIdentifier === elementIdentifier);
+      if (item) {
+        items.push({ ...item });
+        return this;
+      }
+    }
+    throw new Error(`No item with element identifier ${elementIdentifier}`);
+  }
 }
 
 const DEFAULT_NAMESPACES = new Map([
@@ -290,6 +310,22 @@ FPY4eri7CuGrxh14YMTQe1qnBVjoMAoGCCqGSM49BAMCA0gAMEUCIQCm99llHZfq
 nPUS1X4/UZfbJ4HlbU33EaTqS/Y4vrOPVQIgLcG3k0jJQIxapcCUF7r/4rVUju0z
 FmibH8pIONDZjSI=
 -----END CERTIFICATE-----`;
+
+// A valid certificate whose key did not sign the credential.
+const UNRELATED_SIGNING_CERTIFICATE =
+  new X509Certificate(`-----BEGIN CERTIFICATE-----
+MIIB7TCCAZOgAwIBAgIUZpfeB6WGkUsUk13SiJX8i6vG1IEwCgYIKoZIzj0EAwIw
+XDELMAkGA1UEBhMCVUsxDzANBgNVBAgMBkxvbmRvbjEPMA0GA1UEBwwGTG9uZG9u
+MQ0wCwYDVQQKDARUZXN0MQ0wCwYDVQQLDARUZXN0MQ0wCwYDVQQDDARUZXN0MB4X
+DTI2MDEwODEzMzkzNVoXDTI3MDEwODEzMzkzNVowTTELMAkGA1UEBhMCVUsxDzAN
+BgNVBAgMBkxvbmRvbjEPMA0GA1UEBwwGTG9uZG9uMQ0wCwYDVQQKDARUZXN0MQ0w
+CwYDVQQLDARUZXN0MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+jfaNAHbEm+P
+2QbR6EMOj7+nILxkSJIani1RIPJI2X/NTtwJbMq6TN7X7f9BtK5DsioNOThMF/+t
+1EFaLFPAuKNCMEAwHQYDVR0OBBYEFL0/RS4sYeY0F/AvLmHbEEv9NSG4MB8GA1Ud
+IwQYMBaAFOuameupM0YpmgBT5Q4WxFe6TVMUMAoGCCqGSM49BAMCA0gAMEUCIEBO
+RlvvhrfRUeNSJ0B18SsHCw1r4YUoJ206JZPFWxsRAiEA39zuNQ4ituFpufYFAUzb
+h6XK6xERRLkY5jjINTt8TkU=
+-----END CERTIFICATE-----`);
 
 const DEFAULT_DEVICE_KEY = new Map<number, number | Uint8Array>([
   [COSE_KEY_PARAMETERS.KTY, COSE_KEY_TYPES.EC2],

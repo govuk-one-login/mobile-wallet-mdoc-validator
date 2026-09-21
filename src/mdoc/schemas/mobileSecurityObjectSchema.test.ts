@@ -18,7 +18,9 @@ const validMso = () => ({
     keyAuthorizations: { nameSpaces: ["org.test.namespace.1"] },
   },
   valueDigests: {
-    "org.test.namespace.1": new Map<number, Uint8Array>([[0, new Uint8Array(32)]]),
+    "org.test.namespace.1": new Map<number, Uint8Array>([
+      [0, new Uint8Array(32)],
+    ]),
   },
   docType: "org.test.doc",
   validityInfo: {
@@ -98,7 +100,7 @@ describe("mobileSecurityObjectSchema", () => {
       expect(() =>
         parseMso(
           withMso({
-            valueDigests: {"org.test.namespace.1": { 0: new Uint8Array(32) } },
+            valueDigests: { "org.test.namespace.1": { 0: new Uint8Array(32) } },
           }),
         ),
       ).toThrow();
@@ -289,7 +291,9 @@ describe("mobileSecurityObjectSchema", () => {
 
     it("rejects unknown keys in status", () => {
       expect(() =>
-        parseMso(withMso({ status: { ...validMso().status, unknownKey: true } })),
+        parseMso(
+          withMso({ status: { ...validMso().status, unknownKey: true } }),
+        ),
       ).toThrow();
     });
 

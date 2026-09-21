@@ -1,4 +1,4 @@
-import {encode, Tag} from "cbor2";
+import { encode, Tag } from "cbor2";
 import { decodeCbor } from "./decodeCbor";
 import { MdocValidationError } from "./MdocValidationError";
 

@@ -10,7 +10,8 @@ const validIssuerSignedItem = () => ({
   random: new Uint8Array(16),
 });
 
-const taggedIssuerSignedItem = () => new Tag(TAGS.ENCODED_CBOR_DATA, encode(validIssuerSignedItem()));
+const taggedIssuerSignedItem = () =>
+  new Tag(TAGS.ENCODED_CBOR_DATA, encode(validIssuerSignedItem()));
 
 const validIssuerSigned = () => ({
   nameSpaces: { "org.test.namespace.1": [taggedIssuerSignedItem()] },

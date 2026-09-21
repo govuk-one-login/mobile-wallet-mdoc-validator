@@ -76,7 +76,10 @@ describe("issuerSignedItemSchema", () => {
 
     it("accepts null", () => {
       expect(() =>
-        parseIssuerSignedItem({ ...validIssuerSignedItem(), elementValue: null }),
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementValue: null,
+        }),
       ).not.toThrow();
     });
   });
