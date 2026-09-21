@@ -18,6 +18,11 @@ export const dateTimeTag = z
   .refine((tag) => tag.tag === TAGS.DATE_TIME, {
     message: "must be tagged with 0 (date-time)",
   })
-  .refine((tag) => typeof tag.contents === "string", {
-    message: "tag contents must be a string",
+  .refine(
+    (tag): tag is Tag & { contents: string } =>
+      typeof tag.contents === "string",
+    { message: "tag contents must be a string" },
+  )
+  .refine((tag) => !Number.isNaN(Date.parse(tag.contents as string)), {
+    message: "tag contents must be a valid date-time",
   });

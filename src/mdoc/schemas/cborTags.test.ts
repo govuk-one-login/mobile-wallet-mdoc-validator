@@ -62,4 +62,8 @@ describe("dateTimeTag", () => {
   it("rejects a value that is not a Tag", () => {
     expect(() => parseDateTime("2024-01-01T00:00:00Z")).toThrow();
   });
+
+  it("rejects a string that is not a valid date", () => {
+    expect(() => parseDateTime(new Tag(TAGS.DATE_TIME, "not a date"))).toThrow();
+  });
 });
