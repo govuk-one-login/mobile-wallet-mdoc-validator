@@ -80,6 +80,10 @@ describe("issuerSignedItemSchema", () => {
     // so null is accepted. CBOR undefined decodes to JS undefined and is rejected
     // as missing — a deliberate narrowing, since no issuer should sign an absent value.
     it("accepts null", () => {
+      expect(() =>
+        parseIssuerSignedItem({ ...validIssuerSignedItem(), elementValue: null }),
+      ).not.toThrow();
+    });
   });
 
   describe("random", () => {
