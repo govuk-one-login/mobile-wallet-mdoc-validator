@@ -22,3 +22,5 @@ export const issuerSignedItemSchema = z
     }),
   })
   .strict();
+
+export type IssuerSignedItem = z.infer<typeof issuerSignedItemSchema>;
