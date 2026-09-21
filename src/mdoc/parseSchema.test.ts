@@ -1,36 +1,41 @@
 import { z } from "zod";
-import { parseSchema } from "./parseSchema";
 import { MdocValidationError } from "./MdocValidationError";
+import { parseSchema } from "./parseSchema";
+
+const schema = z.object({ id: z.number() }).strict();
 
 describe("parseSchema", () => {
-  const testSchema = z.object({ name: z.string() }).strict();
+  it("returns the parsed data when valid", () => {
+    expect(parseSchema(schema, { id: 1 }, "Thing")).toEqual({ id: 1 });
+  });
 
-  it("should throw MdocValidationError with path and message", () => {
+  it("throws an MdocValidationError with INVALID_SCHEMA when invalid", () => {
     expect.assertions(2);
     try {
-      parseSchema(testSchema, { name: 123 }, "TestLabel");
+      parseSchema(schema, { id: "one" }, "Thing");
     } catch (error) {
       expect(error).toBeInstanceOf(MdocValidationError);
-      expect((error as Error).message).toBe(
-        "TestLabel does not comply with schema - name: Expected string, received number",
-      );
+      expect((error as MdocValidationError).code).toBe("INVALID_SCHEMA");
     }
   });
 
-  it("should default path to 'root' when path is empty", () => {
-    expect.assertions(2);
-    try {
-      parseSchema(testSchema, "not an object", "TestLabel");
-    } catch (error) {
-      expect(error).toBeInstanceOf(MdocValidationError);
-      expect((error as Error).message).toMatch(
-        "TestLabel does not comply with schema - root: Expected object, received string",
-      );
-    }
+  it("includes the label in the message", () => {
+    expect(() => parseSchema(schema, {}, "Thing")).toThrow(/Thing/);
   });
 
-  it("should return parsed data when valid", () => {
-    const result = parseSchema(testSchema, { name: "Alice" }, "TestLabel");
-    expect(result).toEqual({ name: "Alice" });
+  it("includes the failing path in the message", () => {
+    expect(() => parseSchema(schema, { id: "one" }, "Thing")).toThrow(/id/);
+  });
+
+  it("reports the root path when the value itself is wrong", () => {
+    expect(() => parseSchema(schema, "not an object", "Thing")).toThrow(/root/);
+  });
+
+  it("reports every issue, not just the first", () => {
+    const multi = z.object({ a: z.number(), b: z.number() }).strict();
+    const fn = () => parseSchema(multi, { a: "x", b: "y" }, "Thing");
+
+    expect(fn).toThrow(/a:/);
+    expect(fn).toThrow(/b:/);
   });
 });
