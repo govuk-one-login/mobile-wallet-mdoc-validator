@@ -18,7 +18,7 @@ Tag.registerDecoder(
 
 export function decodeCbor(bytes: Uint8Array, label: string): unknown {
   try {
-    return decode(bytes);
+    return decode(bytes, { rejectDuplicateKeys: true });
   } catch (error) {
     throw new MdocValidationError(
       `${label} is not valid CBOR - ${errorMessage(error)}`,
