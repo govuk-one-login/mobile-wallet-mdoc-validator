@@ -1,15 +1,15 @@
-import { decode, encode, Tag, type TagDecoderMap } from "cbor2";
+import { encode } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
-import { getAjvInstance } from "../ajv/ajvInstance";
-import { mobileSecurityObjectSchema } from "./schemas/mobileSecurityObjectSchema";
-import { TAGS } from "./constants/tags";
-import { errorMessage, MdocValidationError } from "./MdocValidationError";
-import { IssuerAuth, TaggedIssuerSignedItem } from "./types/issuerSigned";
 import {
   MobileSecurityObject,
+  mobileSecurityObjectSchema,
   ValidityInfo,
   ValueDigests,
-} from "./types/mobileSecurityObject";
+} from "./schemas/mobileSecurityObjectSchema";
+import { errorMessage, MdocValidationError } from "./MdocValidationError";
+import { parseSchema } from "./parseSchema";
+import { decodeCbor } from "./decodeCbor";
+import { IssuerAuth, NameSpaces } from "./schemas/issuerSignedSchema";
 import {
   COSE_ALGORITHMS,
   COSE_ELLIPTIC_CURVES,
@@ -17,35 +17,33 @@ import {
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
 } from "./constants/cose";
-
-const tags: TagDecoderMap = new Map([
-  [
-    TAGS.ENCODED_CBOR_DATA,
-    (tag: { contents: unknown }) =>
-      decode(tag.contents as Uint8Array, { tags: tags }),
-  ],
-  [TAGS.DATE_TIME, (tag: { contents: unknown }) => tag.contents],
-]);
+import { encodedDataTag } from "./schemas/cborTags";
+import { issuerSignedItemSchema } from "./schemas/issuerSignedItemSchema";
 
 export async function validateIssuerAuth(
   issuerAuth: IssuerAuth,
-  namespaces: Record<string, Tag[]>,
-) {
-  const protectedHeader = issuerAuth[0];
-  validateProtectedHeader(protectedHeader);
+  nameSpaces: NameSpaces,
+): Promise<void> {
+  const [protectedHeader, unprotectedHeader, payload, signature] = issuerAuth; // COSE_Sign1
 
-  const unprotectedHeader = issuerAuth[1];
+  validateProtectedHeader(protectedHeader);
   const certificate = validateUnprotectedHeader(unprotectedHeader);
 
-  const payload = issuerAuth[2];
-  await validatePayload(payload, namespaces);
-
-  const signature = issuerAuth[3];
+  // Everything below operates on the MSO, so the signature must be verified first.
   verifySignature(certificate.publicKey, protectedHeader, payload, signature);
+
+  const mso = parseMobileSecurityObject(payload);
+  validateValidityInfo(mso.validityInfo);
+  validateDigestsMatchMso(mso.valueDigests, nameSpaces);
+  await validateDeviceKey(mso.deviceKeyInfo.deviceKey);
 }
 
 function validateProtectedHeader(protectedHeader: Uint8Array): void {
-  const protectedHeaderDecoded = decode(protectedHeader);
+  const protectedHeaderDecoded = decodeCbor(
+    protectedHeader,
+    "Protected header",
+  );
+
   if (!(protectedHeaderDecoded instanceof Map)) {
     throw new MdocValidationError(
       "Protected header is not a Map",
@@ -55,16 +53,18 @@ function validateProtectedHeader(protectedHeader: Uint8Array): void {
 
   if (protectedHeaderDecoded.size !== 1) {
     throw new MdocValidationError(
-      "Protected header contains unexpected extra parameters - must contain only one",
+      "Protected header contains unexpected extra parameters",
       "INVALID_PROTECTED_HEADER",
     );
   }
+
   if (!protectedHeaderDecoded.has(COSE_HEADER_PARAMETERS.ALG)) {
     throw new MdocValidationError(
       'Protected header missing "alg" (1)',
       "INVALID_PROTECTED_HEADER",
     );
   }
+
   if (
     protectedHeaderDecoded.get(COSE_HEADER_PARAMETERS.ALG) !==
     COSE_ALGORITHMS.ES256
@@ -81,7 +81,7 @@ function validateUnprotectedHeader(
 ): X509Certificate {
   if (unprotectedHeader.size !== 1) {
     throw new MdocValidationError(
-      "Unprotected header contains unexpected extra parameters - must contain only one",
+      "Unprotected header contains unexpected extra parameters",
       "INVALID_UNPROTECTED_HEADER",
     );
   }
@@ -107,76 +107,95 @@ function validateUnprotectedHeader(
   return certificate;
 }
 
-async function validatePayload(
+function verifySignature(
+  publicKey: KeyObject,
+  protectedHeader: Uint8Array,
   payload: Uint8Array,
-  nameSpaces: Record<string, Tag[]>,
-) {
-  const mobileSecurityObject: MobileSecurityObject = decode(payload, {
-    tags: tags,
-  });
-  validateMobileSecurityObject(mobileSecurityObject);
-  validateDigests(mobileSecurityObject.valueDigests, nameSpaces);
-  await validateDeviceKey(mobileSecurityObject.deviceKeyInfo.deviceKey);
-  validateValidityInfo(mobileSecurityObject.validityInfo);
-}
-
-function validateMobileSecurityObject(
-  mobileSecurityObject: MobileSecurityObject,
+  signature: Uint8Array,
 ): void {
-  const ajv = getAjvInstance();
+  const sigStructure = [
+    "Signature1",
+    protectedHeader,
+    new Uint8Array(),
+    payload,
+  ];
 
-  const validator = ajv.compile(mobileSecurityObjectSchema);
+  const toBeSigned = encode(sigStructure);
+  try {
+    const outcome = verify(
+      "sha256",
+      toBeSigned,
+      { key: publicKey, dsaEncoding: "ieee-p1363" },
+      signature,
+    );
 
-  if (!validator(mobileSecurityObject)) {
-    const errors =
-      validator.errors?.map((error) => ({
-        path: error.instancePath || "root",
-        message: error.message || "Unknown validation error",
-        value: error.data,
-        keyword: error.keyword,
-      })) || [];
-
-    const errorDetails = errors
-      .map((err) => `${err.path}: ${err.message}`)
-      .join("; ");
-
+    if (!outcome) {
+      throw new MdocValidationError(
+        "Signature not verified",
+        "INVALID_SIGNATURE",
+      );
+    }
+  } catch (error) {
+    if (error instanceof MdocValidationError) {
+      throw error;
+    }
     throw new MdocValidationError(
-      `MobileSecurityObject does not comply with schema - ${errorDetails}`,
-      "INVALID_SCHEMA",
+      `Signature could not be verified - ${errorMessage(error)} `,
+      "INVALID_SIGNATURE",
     );
   }
 }
 
-function validateDigests(
+function parseMobileSecurityObject(payload: Uint8Array): MobileSecurityObject {
+  const msoBytes = parseSchema(
+    encodedDataTag,
+    decodeCbor(payload, "MobileSecurityObjectBytes"),
+    "MobileSecurityObjectBytes",
+  );
+  return parseSchema(
+    mobileSecurityObjectSchema,
+    decodeCbor(msoBytes.contents, "MobileSecurityObject"),
+    "MobileSecurityObject",
+  );
+}
+
+// Every presented item in nameSpaces must match an MSO digest.
+// MSO digests with no presented item are expected — that's selective disclosure.
+function validateDigestsMatchMso(
   valueDigests: ValueDigests,
-  nameSpaces: Record<string, Tag[]>,
+  nameSpaces: NameSpaces,
 ): void {
   for (const [namespace, items] of Object.entries(nameSpaces)) {
-    for (const taggedIssuerSignedItemBytes of items) {
-      const encodedTaggedIssuerSignedItemBytes = encode(
-        taggedIssuerSignedItemBytes,
+    const msoDigests = valueDigests[namespace];
+    if (!msoDigests) {
+      throw new MdocValidationError(
+        `No digests found for namespace ${namespace}`,
+        "INVALID_DIGESTS",
       );
+    }
+
+    for (const taggedIssuerSignedItemBytes of items) {
       const calculatedDigest = createHash("sha256")
-        .update(encodedTaggedIssuerSignedItemBytes)
+        .update(encode(taggedIssuerSignedItemBytes))
         .digest();
 
-      const issuerSignedItemBytes =
-        taggedIssuerSignedItemBytes.contents as Uint8Array;
-      const issuedSignedItem = decode<TaggedIssuerSignedItem>(
-        issuerSignedItemBytes,
+      const issuedSignedItem = parseSchema(
+        issuerSignedItemSchema,
+        decodeCbor(taggedIssuerSignedItemBytes.contents, "IssuerSignedItem"),
+        "IssuerSignedItem",
       );
       const digestID = issuedSignedItem.digestID;
 
-      const msoDigests = valueDigests[namespace] as Map<number, Uint8Array>;
       const expectedDigest = msoDigests.get(digestID);
-      if (!expectedDigest) {
+      if (expectedDigest === undefined) {
         throw new MdocValidationError(
           `No digest found for digest ID ${digestID.toString()} in MSO namespace ${namespace}`,
+          "INVALID_DIGESTS",
         );
       }
-      if (!calculatedDigest.equals(expectedDigest)) {
+      if (!calculatedDigest.equals(Buffer.from(expectedDigest))) {
         throw new MdocValidationError(
-          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID.toString()} in namespace ${namespace} - Expected ${Buffer.from(expectedDigest).toString("hex")} but calculated ${calculatedDigest.toString("hex")}`,
+          `Digest mismatch for element identifier ${issuedSignedItem.elementIdentifier} with digest ID ${digestID.toString()} in namespace ${namespace}`,
           "INVALID_DIGESTS",
         );
       }
@@ -259,49 +278,13 @@ async function validateDeviceKey(
   }
 }
 
-function verifySignature(
-  publicKey: KeyObject,
-  protectedHeader: Uint8Array,
-  payload: Uint8Array,
-  signature: Uint8Array,
-): void {
-  const sigStructure = [
-    "Signature1",
-    protectedHeader,
-    new Uint8Array(),
-    payload,
-  ];
-
-  const toBeSigned = encode(sigStructure);
-  try {
-    const outcome = verify(
-      "sha256",
-      toBeSigned,
-      { key: publicKey, dsaEncoding: "ieee-p1363" },
-      signature,
-    );
-    if (!outcome) {
-      throw new MdocValidationError(
-        "Signature not verified",
-        "INVALID_SIGNATURE",
-      );
-    }
-  } catch (error) {
-    if (error instanceof MdocValidationError) {
-      throw error;
-    }
-    throw new MdocValidationError(
-      `Signature could not be verified - ${errorMessage(error)} `,
-      "INVALID_SIGNATURE",
-    );
-  }
-}
-
 function validateValidityInfo(validityInfo: ValidityInfo): void {
   const errors: string[] = [];
   const now = new Date();
 
-  const { signed, validFrom, validUntil } = validityInfo;
+  const signed = validityInfo.signed.contents;
+  const validFrom = validityInfo.validFrom.contents;
+  const validUntil = validityInfo.validUntil.contents;
 
   const signedDate = new Date(signed);
   const validFromDate = new Date(validFrom);
@@ -314,14 +297,15 @@ function validateValidityInfo(validityInfo: ValidityInfo): void {
     errors.push(`'validUntil' (${validUntil}) must be in the future`);
   if (validFromDate < signedDate)
     errors.push(
-      `'validFrom' (${validUntil}) must be equal or later than 'signed' (${signed})`,
+      `'validFrom' (${validFrom}) must be equal or later than 'signed' (${signed})`,
     );
 
   if (validityInfo.expectedUpdate) {
-    const expectedUpdateDate = new Date(validityInfo.expectedUpdate);
+    const expectedUpdate = validityInfo.expectedUpdate.contents;
+    const expectedUpdateDate = new Date(expectedUpdate);
     if (expectedUpdateDate > validUntilDate)
       errors.push(
-        `'expectedUpdate' (${validityInfo.expectedUpdate}) must be less than or equal to 'validUntil' (${validUntil})`,
+        `'expectedUpdate' (${expectedUpdate}) must be less than or equal to 'validUntil' (${validUntil})`,
       );
   }
 
