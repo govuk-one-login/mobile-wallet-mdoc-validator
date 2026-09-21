@@ -54,8 +54,6 @@ describe("issuerSignedItemSchema", () => {
       ).toThrow();
     });
 
-    // Accepted: CBOR permits zero-length text strings and the spec's CDDL
-    // (DataElementIdentifier = tstr) sets no minimum length.
     it("accepts an empty string", () => {
       expect(() =>
         parseIssuerSignedItem({
@@ -76,9 +74,6 @@ describe("issuerSignedItemSchema", () => {
       ).toThrow();
     });
 
-    // The spec allows any value here (DataElementValue = any), including CBOR null,
-    // so null is accepted. CBOR undefined decodes to JS undefined and is rejected
-    // as missing — a deliberate narrowing, since no issuer should sign an absent value.
     it("accepts null", () => {
       expect(() =>
         parseIssuerSignedItem({ ...validIssuerSignedItem(), elementValue: null }),
