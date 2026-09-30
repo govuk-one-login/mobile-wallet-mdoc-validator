@@ -21,6 +21,7 @@ describe("validateMdoc", () => {
   });
 
   it("accepts a valid credential from an external issuer (not built by TestMdocBuilder)", async () => {
+    // See src/testing/fixtures/README.md for provenance and the fixed clock below.
     const EXTERNAL_CREDENTIAL = readFileSync(
       join(__dirname, "testing/fixtures", "external-credential.txt"),
       "utf8",
