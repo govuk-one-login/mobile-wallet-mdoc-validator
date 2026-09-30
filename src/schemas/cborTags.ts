@@ -23,6 +23,12 @@ export const dateTimeTag = z
       typeof tag.contents === "string",
     { message: "tag contents must be a string" },
   )
-  .refine((tag) => !Number.isNaN(Date.parse(tag.contents)), {
-    message: "tag contents must be a valid date-time",
-  });
+  .refine(
+    (tag) =>
+      z.string().datetime({ precision: 0 }).length(20).safeParse(tag.contents)
+        .success,
+    {
+      message:
+        "tag contents must be an RFC 3339 UTC date-time (YYYY-MM-DDTHH:MM:SSZ)",
+    },
+  );

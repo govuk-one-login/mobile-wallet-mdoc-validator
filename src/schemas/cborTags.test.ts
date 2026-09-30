@@ -63,9 +63,24 @@ describe("dateTimeTag", () => {
     expect(() => parseDateTime("2024-01-01T00:00:00Z")).toThrow();
   });
 
-  it("rejects a string that is not a valid date", () => {
+  it("accepts the canonical UTC form YYYY-MM-DDTHH:MM:SSZ", () => {
     expect(() =>
-      parseDateTime(new Tag(TAGS.DATE_TIME, "not a date")),
-    ).toThrow();
+      parseDateTime(new Tag(TAGS.DATE_TIME, "2024-01-01T00:00:00Z")),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ["free text", "not a date"],
+    ["an empty string", ""],
+    ["date only", "2025-09-10"],
+    ["a slash format", "10/09/2025"],
+    ["a space separator instead of T", "2025-09-10 14:30:00Z"],
+    ["fractional seconds", "2025-09-10T14:30:00.123Z"],
+    ["a non-UTC offset", "2025-09-10T14:30:00+01:00"],
+    ["a missing Z designator", "2025-09-10T14:30:00"],
+    ["a lowercase z", "2025-09-10T14:30:00z"],
+    ["trailing characters", "2025-09-10T14:30:00Z "],
+  ])("rejects %s", (_label, contents) => {
+    expect(() => parseDateTime(new Tag(TAGS.DATE_TIME, contents))).toThrow();
   });
 });
