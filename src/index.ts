@@ -1,2 +1,2 @@
-export { validateMdoc } from "./mdoc/validateMdoc";
-export { MdocValidationError } from "./mdoc/MdocValidationError";
+export { validateMdoc } from "./validateMdoc";
+export { MdocValidationError } from "./MdocValidationError";

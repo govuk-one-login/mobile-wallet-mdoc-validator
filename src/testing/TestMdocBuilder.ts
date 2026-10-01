@@ -6,18 +6,24 @@ import {
 } from "node:crypto";
 import { encode, Tag } from "cbor2";
 import { base64url } from "jose";
-import { TAGS } from "./constants/tags";
+import { TAGS } from "../constants/tags";
 import {
   COSE_ALGORITHMS,
   COSE_ELLIPTIC_CURVES,
   COSE_HEADER_PARAMETERS,
   COSE_KEY_PARAMETERS,
   COSE_KEY_TYPES,
-} from "./constants/cose";
-import { TaggedIssuerSignedItem } from "./types/issuerSigned";
+} from "../constants/cose";
+import { IssuerSignedItem } from "../schemas/issuerSignedItemSchema";
+import {
+  IssuerSigned,
+  issuerSignedSchema,
+} from "../schemas/issuerSignedSchema";
+import { parseSchema } from "../parseSchema";
+import { decodeCbor } from "../decodeCbor";
 
 export class TestMdocBuilder {
-  private readonly namespaces: Map<string, TaggedIssuerSignedItem[]>;
+  private readonly namespaces: Map<string, IssuerSignedItem[]>;
   private readonly validityInfo: {
     signed: Tag | string;
     validFrom: Tag | string;
@@ -28,10 +34,8 @@ export class TestMdocBuilder {
   private readonly protectedHeader: Map<unknown, unknown>;
   private readonly unprotectedHeader: Map<unknown, unknown>;
 
-  private readonly elementsWithoutTag24: Set<string>;
   private readonly elementsWithMismatchedDigests: Map<string, Uint8Array>;
   private readonly elementsWithoutDigests: Set<string>;
-  private untaggedMsoBytes = false;
 
   constructor() {
     this.namespaces = new Map();
@@ -63,7 +67,6 @@ export class TestMdocBuilder {
       new Uint8Array(documentSigningCertificate.raw),
     );
 
-    this.elementsWithoutTag24 = new Set<string>();
     this.elementsWithoutDigests = new Set<string>();
     this.elementsWithMismatchedDigests = new Map<string, Uint8Array>();
   }
@@ -78,13 +81,7 @@ export class TestMdocBuilder {
 
       for (const item of items) {
         const itemEncoded = encode(item);
-        const shouldTag = !this.elementsWithoutTag24.has(
-          item.elementIdentifier,
-        );
-
-        const taggedItem = shouldTag
-          ? new Tag(TAGS.ENCODED_CBOR_DATA, itemEncoded)
-          : itemEncoded;
+        const taggedItem = new Tag(TAGS.ENCODED_CBOR_DATA, itemEncoded);
 
         nameSpacesEncoded[namespace].push(taggedItem);
 
@@ -131,10 +128,7 @@ export class TestMdocBuilder {
     };
 
     const msoBytes = encode(mso);
-    const tagged = this.untaggedMsoBytes
-      ? msoBytes
-      : new Tag(TAGS.ENCODED_CBOR_DATA, msoBytes);
-    const payload = encode(tagged);
+    const payload = encode(new Tag(TAGS.ENCODED_CBOR_DATA, msoBytes));
 
     const protectedHeader = encode(this.protectedHeader);
     const toBeSigned = encode([
@@ -173,25 +167,12 @@ export class TestMdocBuilder {
     return base64url.encode(encode(result));
   }
 
-  withDigestId(elementIdentifier: string, digestId: number) {
-    for (const items of this.namespaces.values()) {
-      const item = items.find((i) => i.elementIdentifier === elementIdentifier);
-      if (item) {
-        item.digestID = digestId;
-        return this;
-      }
-    }
-    return this;
-  }
-
-  withUntaggedIssuerSignedItemBytes(elementIdentifier: string) {
-    this.elementsWithoutTag24.add(elementIdentifier);
-    return this;
-  }
-
-  withUntaggedMsoBytes(): this {
-    this.untaggedMsoBytes = true;
-    return this;
+  buildIssuerSigned(): IssuerSigned {
+    return parseSchema(
+      issuerSignedSchema,
+      decodeCbor(base64url.decode(this.build()), "IssuerSigned"),
+      "IssuerSigned",
+    );
   }
 
   withoutDigest(elementIdentifier: string) {
@@ -238,6 +219,26 @@ export class TestMdocBuilder {
       this.unprotectedHeader.set(key, value);
     }
     return this;
+  }
+
+  withMismatchedSigningCertificate(): this {
+    return this.withUnprotectedHeader(
+      new Map().set(
+        COSE_HEADER_PARAMETERS.X5_CHAIN,
+        new Uint8Array(UNRELATED_SIGNING_CERTIFICATE.raw),
+      ),
+    );
+  }
+
+  withDuplicateItem(elementIdentifier: string): this {
+    for (const items of this.namespaces.values()) {
+      const item = items.find((i) => i.elementIdentifier === elementIdentifier);
+      if (item) {
+        items.push({ ...item });
+        return this;
+      }
+    }
+    throw new Error(`No item with element identifier ${elementIdentifier}`);
   }
 }
 
@@ -287,8 +288,8 @@ const DEFAULT_NAMESPACES = new Map([
         random: new Uint8Array([
           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
         ]),
-        elementIdentifier: "birth_date",
-        elementValue: new Tag(TAGS.FULL_DATE, "2000-12-12"),
+        elementIdentifier: "issue_date",
+        elementValue: new Tag(TAGS.DATE_TIME, "2020-01-01T00:00:00Z"),
       },
     ],
   ],
@@ -312,6 +313,22 @@ FPY4eri7CuGrxh14YMTQe1qnBVjoMAoGCCqGSM49BAMCA0gAMEUCIQCm99llHZfq
 nPUS1X4/UZfbJ4HlbU33EaTqS/Y4vrOPVQIgLcG3k0jJQIxapcCUF7r/4rVUju0z
 FmibH8pIONDZjSI=
 -----END CERTIFICATE-----`;
+
+// A valid certificate whose key did not sign the credential.
+const UNRELATED_SIGNING_CERTIFICATE =
+  new X509Certificate(`-----BEGIN CERTIFICATE-----
+MIIB7TCCAZOgAwIBAgIUZpfeB6WGkUsUk13SiJX8i6vG1IEwCgYIKoZIzj0EAwIw
+XDELMAkGA1UEBhMCVUsxDzANBgNVBAgMBkxvbmRvbjEPMA0GA1UEBwwGTG9uZG9u
+MQ0wCwYDVQQKDARUZXN0MQ0wCwYDVQQLDARUZXN0MQ0wCwYDVQQDDARUZXN0MB4X
+DTI2MDEwODEzMzkzNVoXDTI3MDEwODEzMzkzNVowTTELMAkGA1UEBhMCVUsxDzAN
+BgNVBAgMBkxvbmRvbjEPMA0GA1UEBwwGTG9uZG9uMQ0wCwYDVQQKDARUZXN0MQ0w
+CwYDVQQLDARUZXN0MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+jfaNAHbEm+P
+2QbR6EMOj7+nILxkSJIani1RIPJI2X/NTtwJbMq6TN7X7f9BtK5DsioNOThMF/+t
+1EFaLFPAuKNCMEAwHQYDVR0OBBYEFL0/RS4sYeY0F/AvLmHbEEv9NSG4MB8GA1Ud
+IwQYMBaAFOuameupM0YpmgBT5Q4WxFe6TVMUMAoGCCqGSM49BAMCA0gAMEUCIEBO
+RlvvhrfRUeNSJ0B18SsHCw1r4YUoJ206JZPFWxsRAiEA39zuNQ4ituFpufYFAUzb
+h6XK6xERRLkY5jjINTt8TkU=
+-----END CERTIFICATE-----`);
 
 const DEFAULT_DEVICE_KEY = new Map<number, number | Uint8Array>([
   [COSE_KEY_PARAMETERS.KTY, COSE_KEY_TYPES.EC2],
