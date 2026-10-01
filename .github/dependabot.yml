@@ -16,3 +16,27 @@ updates:
       github-actions-updates:
         patterns:
           - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+    groups:
+      prod-deps:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+        patterns:
+          - "*"
+      dev-deps:
+        dependency-type: "development"
+        patterns:
+          - "*"

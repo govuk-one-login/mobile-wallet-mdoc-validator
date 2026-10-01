@@ -22,3 +22,31 @@ jobs:
     uses: ./.github/workflows/sonarqube.yaml
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  typecheck-lint-format:
+    name: Typecheck, Lint and format
+    uses: ./.github/workflows/typecheck-lint-format.yaml
+
+  build-and-test:
+    name: Build and test
+    uses: ./.github/workflows/build-and-test.yaml
+
+  conventional-commits:
+    name: Conventional commits
+    uses: ./.github/workflows/conventional-commits.yaml
+
+  all-checks-passed:
+    name: All checks passed
+    if: always()
+    needs:
+      - run-code-quality-and-security-analysis
+      - typecheck-lint-format
+      - build-and-test
+      - conventional-commits
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Verify all preceding jobs succeeded
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
