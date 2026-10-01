@@ -5,6 +5,7 @@ export const issuerSignedSchema = z
   .object({
     nameSpaces: z
       .record(
+        z.string(),
         z.array(encodedDataTag).min(1, "must NOT have fewer than 1 items"),
       )
       .refine((obj) => Object.keys(obj).length > 0, {

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { MdocValidationError } from "./MdocValidationError";
 
 export function parseSchema<T>(
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  schema: z.ZodType<T>,
   data: unknown,
   label: string,
 ): T {

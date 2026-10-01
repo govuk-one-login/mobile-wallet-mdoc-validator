@@ -25,7 +25,7 @@ export const dateTimeTag = z
   )
   .refine(
     (tag) =>
-      z.string().datetime({ precision: 0 }).length(20).safeParse(tag.contents)
+      z.iso.datetime({ precision: 0 }).length(20).safeParse(tag.contents)
         .success,
     {
       message:
