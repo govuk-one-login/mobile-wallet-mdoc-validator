@@ -10,8 +10,13 @@ import { decodeCbor } from "./decodeCbor";
 /**
  * Validates a base64url-encoded mdoc credential string.
  *
+ * Resolves if the credential is valid. If validation fails, throws an
+ * {@link MdocValidationError} describing the failure; it does not return a
+ * boolean.
+ *
  * @param credential - Base64url-encoded credential.
- * @returns true if the credential is valid; otherwise, throws an error.
+ * @returns A promise that resolves when the credential is valid.
+ * @throws {MdocValidationError} If the credential is invalid.
  */
 export async function validateMdoc(credential: string): Promise<void> {
   const cborBytes = base64UrlToUint8Array(credential);
