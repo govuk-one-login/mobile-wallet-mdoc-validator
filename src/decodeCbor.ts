@@ -18,7 +18,12 @@ Tag.registerDecoder(
 
 export function decodeCbor(bytes: Uint8Array, label: string): unknown {
   try {
-    return decode(bytes, { rejectDuplicateKeys: true });
+    // saveOriginal stores the original encoded bytes of each decoded value so
+    // they can be retrieved later with getEncoded(). This is required for
+    // digest verification: MSO digests are defined over the issuer's original
+    // IssuerSignedItemBytes, so we must hash the bytes as received rather than
+    // a re-encode, which may not be byte-identical.
+    return decode(bytes, { rejectDuplicateKeys: true, saveOriginal: true });
   } catch (error) {
     throw new MdocValidationError(
       `${label} is not valid CBOR - ${errorMessage(error)}`,

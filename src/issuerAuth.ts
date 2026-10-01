@@ -1,4 +1,4 @@
-import { encode } from "cbor2";
+import { encode, getEncoded } from "cbor2";
 import { createHash, KeyObject, verify, X509Certificate } from "node:crypto";
 import {
   MobileSecurityObject,
@@ -175,8 +175,21 @@ function validateDigestsMatchMso(
     }
 
     for (const taggedIssuerSignedItemBytes of items) {
+      // Hash the original IssuerSignedItemBytes as received, not a re-encode.
+      // The MSO digest is defined over the issuer's exact signed bytes; a cbor2
+      // re-encode is not guaranteed to be byte-identical (map key ordering,
+      // non-minimal integers, etc.), which would break digest matching for
+      // legitimately signed items. saveOriginal (see decodeCbor) makes the
+      // original bytes available via getEncoded.
+      const originalBytes = getEncoded(taggedIssuerSignedItemBytes);
+      if (originalBytes === undefined) {
+        throw new MdocValidationError(
+          `Could not recover original bytes for an item in namespace ${namespace}`,
+          "INVALID_DIGESTS",
+        );
+      }
       const calculatedDigest = createHash("sha256")
-        .update(encode(taggedIssuerSignedItemBytes))
+        .update(originalBytes)
         .digest();
 
       const issuedSignedItem = parseSchema(
