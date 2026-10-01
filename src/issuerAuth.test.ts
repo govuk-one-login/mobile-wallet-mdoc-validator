@@ -184,7 +184,7 @@ describe("validateIssuerAuth", () => {
           }),
         ),
       ).rejects.toThrow(
-        "One or more dates are invalid - 'signed' (2025-09-10T15:40:00Z) must be in the past,'validFrom' (2025-09-10T15:40:00Z) must be in the past",
+        "One or more dates are invalid - 'signed' (2025-09-10T15:40:00Z) must be in the past; 'validFrom' (2025-09-10T15:40:00Z) must be in the past",
       );
     });
 

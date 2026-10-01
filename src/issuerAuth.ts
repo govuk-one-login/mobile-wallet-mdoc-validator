@@ -140,7 +140,7 @@ function verifySignature(
       throw error;
     }
     throw new MdocValidationError(
-      `Signature could not be verified - ${errorMessage(error)} `,
+      `Signature could not be verified - ${errorMessage(error)}`,
       "INVALID_SIGNATURE",
     );
   }
@@ -324,7 +324,7 @@ function validateValidityInfo(validityInfo: ValidityInfo): void {
 
   if (errors.length !== 0) {
     throw new MdocValidationError(
-      `One or more dates are invalid - ${errorMessage(errors)}`,
+      `One or more dates are invalid - ${errors.join("; ")}`,
       "INVALID_VALIDITY_INFO",
     );
   }
