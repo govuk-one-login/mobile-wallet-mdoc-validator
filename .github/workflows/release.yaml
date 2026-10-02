@@ -26,17 +26,4 @@ jobs:
 
   conventional-commits:
     name: Conventional commits
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - name: Check commit messages
-        uses: cocogitto/cocogitto-action@52d0023b4396897f1815648e553db2ab8d782f3a # v4.2.0
-        with:
-          command: check
-          # Only check commits since the latest release tag
-          args: --from-latest-tag
+    uses: ./.github/workflows/conventional-commits.yaml
