@@ -27,3 +27,80 @@ jobs:
   conventional-commits:
     name: Conventional commits
     uses: ./.github/workflows/conventional-commits.yaml
+
+  create-release:
+    name: Create release
+    needs:
+      - run-code-quality-and-security-analysis
+      - validate
+      - conventional-commits
+    # Release-loop guard: skip the bot's own "chore(version):" bump commit.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !startsWith(github.event.head_commit.message, 'chore(version):')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write # Required to mint the GitHub OIDC token for AWS role assumption.
+    steps:
+      # Assume the AWS IAM role via GitHub OIDC (no stored AWS keys).
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
+        with:
+          role-to-assume: ${{ vars.AWS_RELEASE_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Fetch the GitHub App credentials from Secrets Manager and name them from the JSON keys.
+      - name: Fetch App credentials from Secrets Manager
+        uses: aws-actions/aws-secretsmanager-get-secrets@2297f9a879480a9e3af9b293ed15c70caf8e1c88 # v3.0.2
+        with:
+          secret-ids: |
+            ,ci/release_action/mdoc_release_app_mdoc_validator
+          parse-json-secrets: true
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
+        with:
+          app-id: ${{ env.CLIENT_ID }}
+          private-key: ${{ env.PRIVATE_KEY }}
+
+      - name: Derive App bot identity
+        id: bot-identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+          USER_ID="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          echo "name=${APP_SLUG}[bot]" >> "$GITHUB_OUTPUT"
+          echo "email=${USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com" >> "$GITHUB_OUTPUT"
+
+      - name: Check out repository code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # Full history for cocogitto.
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Create semantic release
+        id: release
+        uses: cocogitto/cocogitto-action@52d0023b4396897f1815648e553db2ab8d782f3a # v4.2.0
+        with:
+          command: bump
+          args: --auto
+          git-user: ${{ steps.bot-identity.outputs.name }}
+          git-user-email: ${{ steps.bot-identity.outputs.email }}
+
+      - name: Push bump commit and tag
+        if: steps.release.outputs.version != ''
+        run: |
+          set -euo pipefail
+          git push origin HEAD:main
+          git push origin "refs/tags/${{ steps.release.outputs.version }}"
