@@ -289,7 +289,9 @@ const DEFAULT_NAMESPACES = new Map([
           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
         ]),
         elementIdentifier: "issue_date",
-        elementValue: new Tag(TAGS.DATE_TIME, "2020-01-01T00:00:00Z"),
+        elementValue: new Tag(TAGS.DATE_TIME, "2020-01-01T00:00:00Z") as Tag & {
+          contents: string;
+        },
       },
     ],
   ],
