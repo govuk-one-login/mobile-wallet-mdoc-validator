@@ -21,8 +21,16 @@ describe("classifyPrimitive", () => {
     ["a number", 1, "number"],
     ["a boolean", true, "boolean"],
     ["a Uint8Array", new Uint8Array([1]), "bytes"],
-    ["a tag-0 date-time", new Tag(TAGS.DATE_TIME, "2024-01-01T00:00:00Z"), "date"],
-    ["a tag-1004 full-date", new Tag(TAGS.FULL_DATE, "2024-01-01"), "full-date"],
+    [
+      "a tag-0 date-time",
+      new Tag(TAGS.DATE_TIME, "2024-01-01T00:00:00Z"),
+      "date",
+    ],
+    [
+      "a tag-1004 full-date",
+      new Tag(TAGS.FULL_DATE, "2024-01-01"),
+      "full-date",
+    ],
   ])("classifies %s", (_label, value, expected) => {
     expect(classifyPrimitive(value)).toBe(expected);
   });
