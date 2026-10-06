@@ -1,0 +1,92 @@
+name: Mdoc Validator - Publish (npm, OIDC)
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+permissions:
+  # Required for npm OIDC trusted publishing.
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel an in-flight publish.
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-24.04
+    environment: npm-publish
+    permissions:
+      id-token: write # Required for npm OIDC trusted publishing.
+      contents: write # Needed to create the GitHub Release.
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Node 24 is used explicitly (not .nvmrc) for reliable npm OIDC publishing.
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+
+      - name: Verify tag matches package.json version
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          echo "tag=${TAG_VERSION} package.json=${PKG_VERSION}"
+          if [ "${TAG_VERSION}" != "${PKG_VERSION}" ]; then
+            echo "::error::Tag version (${TAG_VERSION}) does not match package.json version (${PKG_VERSION})."
+            exit 1
+          fi
+
+      # npm OIDC trusted publishing requires npm CLI >= 11.5.1.
+      - name: Ensure npm >= 11.5.1
+        run: npm install -g npm@12.0.2 --ignore-scripts
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # NODE_AUTH_TOKEN cleared so npm cannot fall back to token auth.
+      # Direct publish (not staged); provenance is automatic for a public repo + public package via OIDC.
+      - name: Publish to npm (OIDC, auto provenance)
+        env:
+          NODE_AUTH_TOKEN: ""
+        run: npm publish
+
+      - name: Check for existing GitHub release
+        id: existing-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release ${GITHUB_REF_NAME} already exists; skipping creation."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Release created as published (not draft), only after a successful npm publish.
+      - name: Create GitHub release
+        if: steps.existing-release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@aec2ec56f94eb8180ceec724245f64ef008b89f5 # v2.4.0
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          generate_release_notes: true

@@ -1,7 +1,11 @@
 {
-  "name": "@govuk/mobile-wallet-mdoc-validator",
+  "name": "@govuk-one-login/mobile-wallet-mdoc-validator",
   "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/govuk-one-login/mobile-wallet-mdoc-validator.git"
+  },
   "engines": {
     "node": ">=22"
   },
@@ -28,7 +32,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "TZ=UTC jest --coverage"
+    "test": "TZ=UTC jest --coverage",
+    "publish-v0-to-npm": "./publish-v0-to-npm.sh"
   },
   "dependencies": {
     "cbor2": "2.3.0",
