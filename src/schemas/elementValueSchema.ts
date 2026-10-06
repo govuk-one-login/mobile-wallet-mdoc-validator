@@ -53,12 +53,7 @@ export const primitiveScalarSchema = z.union([
  * A tag used to classify a primitive value's type for homogeneity checks.
  */
 type PrimitiveType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "date"
-  | "full-date"
-  | "bytes";
+  "string" | "number" | "boolean" | "date" | "full-date" | "bytes";
 
 /**
  * Classifies a value as one of the primitive types, or null if it is not a
@@ -108,6 +103,45 @@ function checkHomogeneousPrimitives(
 }
 
 /**
+ * Validates a single map's size bounds and keys (string + Latin-1), reporting
+ * issues onto the given ctx. Returns false and stops at the first failure so
+ * callers can short-circuit. Value homogeneity is checked separately by the
+ * caller, which decides whether to check per-map or across flattened values.
+ */
+function checkMapSizeAndKeys(
+  map: Map<unknown, unknown>,
+  ctx: z.RefinementCtx,
+): boolean {
+  if (map.size < collections.minLength) {
+    ctx.addIssue({ code: "custom", message: "must not be empty" });
+    return false;
+  }
+  if (map.size > collections.maxLength) {
+    ctx.addIssue({
+      code: "custom",
+      message: `must not exceed ${collections.maxLength.toString()} entries`,
+    });
+    return false;
+  }
+
+  for (const key of map.keys()) {
+    if (typeof key !== "string") {
+      ctx.addIssue({ code: "custom", message: "all keys must be strings" });
+      return false;
+    }
+    if (!isLatin1(key)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "keys must contain only Latin1 (ISO/IEC 8859-1) characters",
+      });
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * An array of homogeneous primitives: non-empty, ≤256 entries, single type.
  */
 const primitiveArraySchema = z
@@ -127,32 +161,7 @@ const primitiveArraySchema = z
 const primitiveMapSchema = z
   .map(z.unknown(), z.unknown())
   .superRefine((map, ctx) => {
-    if (map.size < collections.minLength) {
-      ctx.addIssue({ code: "custom", message: "must not be empty" });
-      return;
-    }
-    if (map.size > collections.maxLength) {
-      ctx.addIssue({
-        code: "custom",
-        message: `must not exceed ${collections.maxLength.toString()} entries`,
-      });
-      return;
-    }
-
-    for (const key of map.keys()) {
-      if (typeof key !== "string") {
-        ctx.addIssue({ code: "custom", message: "all keys must be strings" });
-        return;
-      }
-      if (!isLatin1(key)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "keys must contain only Latin1 (ISO/IEC 8859-1) characters",
-        });
-        return;
-      }
-    }
-
+    if (!checkMapSizeAndKeys(map, ctx)) return;
     checkHomogeneousPrimitives([...map.values()], ctx);
   });
 
@@ -171,32 +180,7 @@ const mapArraySchema = z
     const flattenedValues: unknown[] = [];
 
     for (const map of maps) {
-      if (map.size < collections.minLength) {
-        ctx.addIssue({ code: "custom", message: "must not be empty" });
-        return;
-      }
-      if (map.size > collections.maxLength) {
-        ctx.addIssue({
-          code: "custom",
-          message: `must not exceed ${collections.maxLength.toString()} entries`,
-        });
-        return;
-      }
-
-      for (const key of map.keys()) {
-        if (typeof key !== "string") {
-          ctx.addIssue({ code: "custom", message: "all keys must be strings" });
-          return;
-        }
-        if (!isLatin1(key)) {
-          ctx.addIssue({
-            code: "custom",
-            message: "keys must contain only Latin1 (ISO/IEC 8859-1) characters",
-          });
-          return;
-        }
-      }
-
+      if (!checkMapSizeAndKeys(map, ctx)) return;
       flattenedValues.push(...map.values());
     }
 

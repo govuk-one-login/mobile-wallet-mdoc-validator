@@ -85,15 +85,15 @@ describe("primitiveScalarSchema", () => {
     });
 
     it("rejects a number beyond MAX_SAFE_INTEGER", () => {
-      expect(() =>
-        parsePrimitive(Number.MAX_SAFE_INTEGER + 1),
-      ).toThrow(MdocValidationError);
+      expect(() => parsePrimitive(Number.MAX_SAFE_INTEGER + 1)).toThrow(
+        MdocValidationError,
+      );
     });
 
     it("rejects a number below MIN_SAFE_INTEGER", () => {
-      expect(() =>
-        parsePrimitive(Number.MIN_SAFE_INTEGER - 1),
-      ).toThrow(MdocValidationError);
+      expect(() => parsePrimitive(Number.MIN_SAFE_INTEGER - 1)).toThrow(
+        MdocValidationError,
+      );
     });
   });
 
@@ -116,9 +116,7 @@ describe("primitiveScalarSchema", () => {
 
     it("rejects a Tag with wrong tag number", () => {
       expect(() =>
-        parsePrimitive(
-          new Tag(TAGS.ENCODED_CBOR_DATA, "2024-01-01T00:00:00Z"),
-        ),
+        parsePrimitive(new Tag(TAGS.ENCODED_CBOR_DATA, "2024-01-01T00:00:00Z")),
       ).toThrow(MdocValidationError);
     });
 
@@ -256,8 +254,8 @@ describe("elementValueSchema — collections", () => {
 
     it("accepts a homogeneous date time map", () => {
       const map = new Map<string, Tag>([
-        ["a", new Tag(TAGS.DATE_TIME, "2024-01-01T00:00:00Z"),],
-        ["b", new Tag(TAGS.DATE_TIME, "2026-01-01T00:00:00Z"),],
+        ["a", new Tag(TAGS.DATE_TIME, "2024-01-01T00:00:00Z")],
+        ["b", new Tag(TAGS.DATE_TIME, "2026-01-01T00:00:00Z")],
       ]);
       expect(() => parseElementValue(map)).not.toThrow();
     });
@@ -305,10 +303,7 @@ describe("elementValueSchema — collections", () => {
 
   describe("array of maps", () => {
     it("accepts an array of homogeneous maps", () => {
-      const maps = [
-        new Map([["a", "x"]]),
-        new Map([["b", "y"]]),
-      ];
+      const maps = [new Map([["a", "x"]]), new Map([["b", "y"]])];
       expect(() => parseElementValue(maps)).not.toThrow();
     });
 
@@ -319,9 +314,7 @@ describe("elementValueSchema — collections", () => {
     });
 
     it("rejects an array containing an empty map", () => {
-      expect(() => parseElementValue([new Map()])).toThrow(
-        MdocValidationError,
-      );
+      expect(() => parseElementValue([new Map()])).toThrow(MdocValidationError);
     });
 
     it("rejects an oversized inner map (257 entries)", () => {
