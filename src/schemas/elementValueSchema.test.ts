@@ -122,11 +122,10 @@ describe("primitiveScalarSchema", () => {
       ).toThrow(MdocValidationError);
     });
 
-    it("rejects a plain date string (not a Tag)", () => {
-      // A string that looks like a date but isn't wrapped in Tag 0
-      // will be parsed as a plain string — and passes string validation
-      // if it's valid Latin-1 and within 1–150 chars. We verify the
-      // dateTimeTag rejects non-Tags via the dateTimeTag test suite.
+    it("treats a plain date-shaped string as a string, not a date", () => {
+      // A date-looking value that isn't wrapped in Tag 0 is validated by the
+      // string branch: it passes if it is Latin-1 and within 1–150 chars.
+      expect(() => parsePrimitive("2024-01-01T00:00:00Z")).not.toThrow();
     });
   });
 
