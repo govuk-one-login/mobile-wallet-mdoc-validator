@@ -16,6 +16,17 @@ Tag.registerDecoder(
   (tag) => new Tag(TAGS.DATE_TIME, tag.contents),
 );
 
+/*
+ * Override the default CBOR tag 1004 (RFC3339 full-date) decoder.
+ * By default, data with tag 1004 is automatically parsed into a JavaScript Date.
+ * Like tag 0 above, we preserve the Tag wrapper so the schema can verify the
+ * tag number and validate the contents format explicitly.
+ */
+Tag.registerDecoder(
+  TAGS.FULL_DATE,
+  (tag) => new Tag(TAGS.FULL_DATE, tag.contents),
+);
+
 export function decodeCbor(bytes: Uint8Array, label: string): unknown {
   try {
     // saveOriginal stores the original encoded bytes of each decoded value so

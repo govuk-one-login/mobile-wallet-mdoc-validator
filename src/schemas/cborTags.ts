@@ -32,3 +32,17 @@ export const dateTimeTag = z
         "tag contents must be an RFC 3339 UTC date-time (YYYY-MM-DDTHH:MM:SSZ)",
     },
   );
+
+export const fullDateTag = z
+  .instanceof(Tag)
+  .refine((tag) => tag.tag === TAGS.FULL_DATE, {
+    message: "must be tagged with 1004 (full-date)",
+  })
+  .refine(
+    (tag): tag is Tag & { contents: string } =>
+      typeof tag.contents === "string",
+    { message: "tag contents must be a string" },
+  )
+  .refine((tag) => z.iso.date().length(10).safeParse(tag.contents).success, {
+    message: "tag contents must be an RFC 3339 full-date (YYYY-MM-DD)",
+  });

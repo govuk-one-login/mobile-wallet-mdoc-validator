@@ -5,6 +5,14 @@ export default {
   testMatch: ["**/*.test.ts"],
   testEnvironment: "node",
   collectCoverage: false,
+  coverageThreshold: {
+    global: {
+      statements: 98,
+      branches: 95,
+      functions: 100,
+      lines: 98,
+    },
+  },
   /*
   By default, Jest skips transforming files in node_modules, assuming they're CommonJS-compatible.
   Some modern packages (cbor2, @cto.af/wtf8, jose v6) ship only ESM syntax, which Jest can't execute.

@@ -1,7 +1,7 @@
 import { encode, Tag } from "cbor2";
 import { TAGS } from "../constants/tags";
 import { parseSchema } from "../parseSchema";
-import { encodedDataTag, dateTimeTag } from "./cborTags";
+import { encodedDataTag, dateTimeTag, fullDateTag } from "./cborTags";
 
 const parseEncodedData = (data: unknown) =>
   parseSchema(encodedDataTag, data, "EncodedCborData");
@@ -82,5 +82,45 @@ describe("dateTimeTag", () => {
     ["trailing characters", "2025-09-10T14:30:00Z "],
   ])("rejects %s", (_label, contents) => {
     expect(() => parseDateTime(new Tag(TAGS.DATE_TIME, contents))).toThrow();
+  });
+});
+
+const parseFullDate = (data: unknown) =>
+  parseSchema(fullDateTag, data, "FullDate");
+
+describe("fullDateTag", () => {
+  it("accepts a tag 1004 wrapping a full-date string", () => {
+    expect(() =>
+      parseFullDate(new Tag(TAGS.FULL_DATE, "1980-08-15")),
+    ).not.toThrow();
+  });
+
+  it("rejects a different tag number", () => {
+    expect(() =>
+      parseFullDate(new Tag(TAGS.DATE_TIME, "1980-08-15")),
+    ).toThrow();
+  });
+
+  it.each([
+    ["a number", 1704067200],
+    ["bytes", new Uint8Array([1])],
+    ["null", null],
+  ])("rejects contents that are %s", (_label, contents) => {
+    expect(() => parseFullDate(new Tag(TAGS.FULL_DATE, contents))).toThrow();
+  });
+
+  it("rejects a value that is not a Tag", () => {
+    expect(() => parseFullDate("1980-08-15")).toThrow();
+  });
+
+  it.each([
+    ["free text", "not a date"],
+    ["an empty string", ""],
+    ["a date-time (not date-only)", "2025-09-10T14:30:00Z"],
+    ["a slash format", "10/09/2025"],
+    ["trailing characters", "2025-09-10 "],
+    ["year only", "2025"],
+  ])("rejects string content that is %s", (_label, contents) => {
+    expect(() => parseFullDate(new Tag(TAGS.FULL_DATE, contents))).toThrow();
   });
 });

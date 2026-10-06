@@ -1,4 +1,5 @@
 import { parseSchema } from "../parseSchema";
+import { MdocValidationError } from "../MdocValidationError";
 import { issuerSignedItemSchema } from "./issuerSignedItemSchema";
 
 const validIssuerSignedItem = () => ({
@@ -74,13 +75,57 @@ describe("issuerSignedItemSchema", () => {
       ).toThrow();
     });
 
-    it("accepts null", () => {
+    it("rejects null", () => {
       expect(() =>
         parseIssuerSignedItem({
           ...validIssuerSignedItem(),
           elementValue: null,
         }),
+      ).toThrow();
+    });
+
+    it("accepts a valid primitive string", () => {
+      expect(() =>
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementValue: "Doe",
+        }),
       ).not.toThrow();
+    });
+
+    it("accepts a valid homogeneous collection", () => {
+      expect(() =>
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementValue: ["a", "b", "c"],
+        }),
+      ).not.toThrow();
+    });
+
+    it("rejects a malformed primitive with INVALID_SCHEMA", () => {
+      try {
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementValue: "€",
+        });
+        throw new Error("expected to throw");
+      } catch (error) {
+        expect(error).toBeInstanceOf(MdocValidationError);
+        expect((error as MdocValidationError).code).toBe("INVALID_SCHEMA");
+      }
+    });
+
+    it("rejects a malformed collection with INVALID_SCHEMA", () => {
+      try {
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementValue: ["a", 1],
+        });
+        throw new Error("expected to throw");
+      } catch (error) {
+        expect(error).toBeInstanceOf(MdocValidationError);
+        expect((error as MdocValidationError).code).toBe("INVALID_SCHEMA");
+      }
     });
   });
 
