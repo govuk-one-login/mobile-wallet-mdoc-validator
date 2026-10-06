@@ -5,6 +5,7 @@ import { MdocValidationError } from "../MdocValidationError";
 import {
   primitiveScalarSchema,
   elementValueSchema,
+  classifyPrimitive,
 } from "./elementValueSchema";
 import { ELEMENT_VALUE_LIMITS } from "./constants";
 
@@ -13,6 +14,30 @@ const parsePrimitive = (data: unknown) =>
 
 const parseElementValue = (data: unknown) =>
   parseSchema(elementValueSchema, data, "ElementValue");
+
+describe("classifyPrimitive", () => {
+  it.each([
+    ["a string", "x", "string"],
+    ["a number", 1, "number"],
+    ["a boolean", true, "boolean"],
+    ["a Uint8Array", new Uint8Array([1]), "bytes"],
+    ["a tag-0 date-time", new Tag(TAGS.DATE_TIME, "2024-01-01T00:00:00Z"), "date"],
+    ["a tag-1004 full-date", new Tag(TAGS.FULL_DATE, "2024-01-01"), "full-date"],
+  ])("classifies %s", (_label, value, expected) => {
+    expect(classifyPrimitive(value)).toBe(expected);
+  });
+
+  it.each([
+    ["null", null],
+    ["undefined", undefined],
+    ["a plain object", { a: 1 }],
+    ["an array", ["x"]],
+    ["a Map", new Map([["a", "b"]])],
+    ["a Tag with an unsupported number", new Tag(TAGS.ENCODED_CBOR_DATA, "x")],
+  ])("returns null for %s", (_label, value) => {
+    expect(classifyPrimitive(value)).toBeNull();
+  });
+});
 
 describe("primitiveScalarSchema", () => {
   describe("string", () => {
@@ -355,6 +380,12 @@ describe("elementValueSchema — collections", () => {
       const inner = new Map([["a", "x"]]);
       const outer = new Map<string, unknown>([["k", inner]]);
       expect(() => parseElementValue(outer)).toThrow(MdocValidationError);
+    });
+
+    it("rejects an array containing a Tag with an unsupported tag number", () => {
+      expect(() =>
+        parseElementValue([new Tag(TAGS.ENCODED_CBOR_DATA, "x")]),
+      ).toThrow(MdocValidationError);
     });
   });
 

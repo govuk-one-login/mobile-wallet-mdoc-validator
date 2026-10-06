@@ -52,26 +52,35 @@ export const primitiveScalarSchema = z.union([
 /**
  * A tag used to classify a primitive value's type for homogeneity checks.
  */
-type PrimitiveType =
+export type PrimitiveType =
   "string" | "number" | "boolean" | "date" | "full-date" | "bytes";
 
 /**
  * Classifies a value as one of the primitive types, or null if it is not a
  * supported primitive. Used to enforce homogeneity across collections.
  */
-function classifyPrimitive(value: unknown): PrimitiveType | null {
+export function classifyPrimitive(value: unknown): PrimitiveType | null {
   if (typeof value === "string") return "string";
   if (typeof value === "number") return "number";
   if (typeof value === "boolean") return "boolean";
   if (value instanceof Uint8Array) return "bytes";
-  if (value instanceof Tag && value.tag === 0) return "date";
-  if (value instanceof Tag && value.tag === 1004) return "full-date";
+  if (value instanceof Tag) {
+    if (value.tag === 0) return "date";
+    if (value.tag === 1004) return "full-date";
+  }
   return null;
 }
 
 /**
- * Validates that every element of the iterable is a valid primitive and that
- * all share the same primitive type. Reports issues onto the given ctx.
+ * Validates that every element is a valid primitive and that all share the
+ * same primitive type. Reports issues onto the given ctx and stops at the
+ * first failure.
+ *
+ * Classification detects whether a value is a supported primitive type at all
+ * (a null result means it is not — e.g. a nested array or a map). A successful
+ * classification does not guarantee the value is within bounds, so each
+ * classified value is additionally parsed by primitiveScalarSchema to enforce
+ * length/range/byte-length limits.
  */
 function checkHomogeneousPrimitives(
   values: unknown[],
@@ -80,8 +89,8 @@ function checkHomogeneousPrimitives(
   let expectedType: PrimitiveType | null = null;
 
   for (const value of values) {
-    const result = primitiveScalarSchema.safeParse(value);
-    if (!result.success) {
+    const type = classifyPrimitive(value);
+    if (type === null || !primitiveScalarSchema.safeParse(value).success) {
       ctx.addIssue({
         code: "custom",
         message: "all values must be valid primitives",
@@ -89,7 +98,6 @@ function checkHomogeneousPrimitives(
       return;
     }
 
-    const type = classifyPrimitive(value);
     if (expectedType === null) {
       expectedType = type;
     } else if (type !== expectedType) {
