@@ -36,10 +36,7 @@ export const mobileSecurityObjectSchema = z
     // Namespace to (digest ID to digest). Matched against presented items in
     // validateDigestsMatchMso.
     valueDigests: z
-      .record(
-        latin1StringMax256,
-        z.map(z.number(), z.instanceof(Uint8Array)),
-      )
+      .record(latin1StringMax256, z.map(z.number(), z.instanceof(Uint8Array)))
       .refine((obj) => Object.keys(obj).length > 0, {
         message: "must NOT have fewer than 1 properties",
       }),

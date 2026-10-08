@@ -80,9 +80,7 @@ describe("mobileSecurityObjectSchema", () => {
     });
 
     it("rejects a docType longer than 128 characters", () => {
-      expect(() =>
-        parseMso(withMso({ docType: "a".repeat(129) })),
-      ).toThrow();
+      expect(() => parseMso(withMso({ docType: "a".repeat(129) }))).toThrow();
     });
 
     it("rejects a non-Latin-1 docType", () => {
