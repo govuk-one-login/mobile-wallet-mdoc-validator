@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { elementValueSchema } from "./elementValueSchema";
+import { latin1StringMax256 } from "./helpers/latin1";
 
 export const issuerSignedItemSchema = z
   .object({
@@ -9,9 +10,9 @@ export const issuerSignedItemSchema = z
       .int()
       .nonnegative()
       .lt(2 ** 31),
-    // No minimum length: CBOR allows empty text strings and the spec
-    // defines DataElementIdentifier as tstr with no size constraint.
-    elementIdentifier: z.string(),
+    // Bounded to match the builder: non-empty, at most 256 characters, and
+    // Latin-1 (ISO/IEC 8859-1) only.
+    elementIdentifier: latin1StringMax256,
     // Although the spec defines DataElementValue as any, we enforce the
     // builder's bounded, typed rules so validator and builder stay aligned.
     // null and undefined are both rejected.

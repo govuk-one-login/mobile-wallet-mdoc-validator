@@ -55,13 +55,44 @@ describe("issuerSignedItemSchema", () => {
       ).toThrow();
     });
 
-    it("accepts an empty string", () => {
+    it("accepts an identifier exactly 256 characters long", () => {
+      expect(() =>
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementIdentifier: "a".repeat(256),
+        }),
+      ).not.toThrow();
+    });
+
+    it("rejects an empty string", () => {
       expect(() =>
         parseIssuerSignedItem({
           ...validIssuerSignedItem(),
           elementIdentifier: "",
         }),
-      ).not.toThrow();
+      ).toThrow();
+    });
+
+    it("rejects an identifier longer than 256 characters", () => {
+      expect(() =>
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementIdentifier: "a".repeat(257),
+        }),
+      ).toThrow();
+    });
+
+    it("rejects a non-Latin-1 identifier with INVALID_SCHEMA", () => {
+      try {
+        parseIssuerSignedItem({
+          ...validIssuerSignedItem(),
+          elementIdentifier: "€",
+        });
+        throw new Error("expected to throw");
+      } catch (error) {
+        expect(error).toBeInstanceOf(MdocValidationError);
+        expect((error as MdocValidationError).code).toBe("INVALID_SCHEMA");
+      }
     });
   });
 

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { encodedDataTag } from "./cborTags";
+import { latin1StringMax256 } from "./helpers/latin1";
 
 export const issuerSignedSchema = z
   .object({
     nameSpaces: z
       .record(
-        z.string(),
+        latin1StringMax256,
         z.array(encodedDataTag).min(1, "must NOT have fewer than 1 items"),
       )
       .refine((obj) => Object.keys(obj).length > 0, {

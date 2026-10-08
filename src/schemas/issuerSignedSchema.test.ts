@@ -64,6 +64,42 @@ describe("issuerSignedSchema", () => {
         }),
       ).not.toThrow();
     });
+
+    it("accepts a key exactly 256 characters long", () => {
+      expect(() =>
+        parseIssuerSigned({
+          ...validIssuerSigned(),
+          nameSpaces: { ["a".repeat(256)]: [taggedIssuerSignedItem()] },
+        }),
+      ).not.toThrow();
+    });
+
+    it("rejects an empty key", () => {
+      expect(() =>
+        parseIssuerSigned({
+          ...validIssuerSigned(),
+          nameSpaces: { "": [taggedIssuerSignedItem()] },
+        }),
+      ).toThrow();
+    });
+
+    it("rejects a key longer than 256 characters", () => {
+      expect(() =>
+        parseIssuerSigned({
+          ...validIssuerSigned(),
+          nameSpaces: { ["a".repeat(257)]: [taggedIssuerSignedItem()] },
+        }),
+      ).toThrow();
+    });
+
+    it("rejects a non-Latin-1 key", () => {
+      expect(() =>
+        parseIssuerSigned({
+          ...validIssuerSigned(),
+          nameSpaces: { "€": [taggedIssuerSignedItem()] },
+        }),
+      ).toThrow();
+    });
   });
 
   describe("issuerAuth", () => {
