@@ -21,3 +21,19 @@ export function isLatin1(value: string): boolean {
 export const latin1String = z.string().refine(isLatin1, {
   message: "must contain only Latin1 (ISO/IEC 8859-1) characters",
 });
+
+/**
+ * A Latin-1 (ISO/IEC 8859-1) string that is non-empty and at most 128
+ * characters. Empty strings are rejected.
+ */
+export const latin1StringMax128 = z.string().min(1).max(128).refine(isLatin1, {
+  message: "must contain only Latin1 (ISO/IEC 8859-1) characters",
+});
+
+/**
+ * A Latin-1 (ISO/IEC 8859-1) string that is non-empty and at most 256
+ * characters. Empty strings are rejected.
+ */
+export const latin1StringMax256 = z.string().min(1).max(256).refine(isLatin1, {
+  message: "must contain only Latin1 (ISO/IEC 8859-1) characters",
+});

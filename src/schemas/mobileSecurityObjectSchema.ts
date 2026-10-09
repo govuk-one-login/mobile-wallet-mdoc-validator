@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { dateTimeTag } from "./cborTags";
+import { latin1StringMax128, latin1StringMax256 } from "./helpers/latin1";
+
+// Upper bound for status_list.idx: the maximum value of an unsigned 32-bit
+// integer (2^32 - 1).
+const UINT32_MAX = 4294967295;
 
 export const mobileSecurityObjectSchema = z
   .object({
@@ -31,11 +36,11 @@ export const mobileSecurityObjectSchema = z
     // Namespace to (digest ID to digest). Matched against presented items in
     // validateDigestsMatchMso.
     valueDigests: z
-      .record(z.string(), z.map(z.number(), z.instanceof(Uint8Array)))
+      .record(latin1StringMax256, z.map(z.number(), z.instanceof(Uint8Array)))
       .refine((obj) => Object.keys(obj).length > 0, {
         message: "must NOT have fewer than 1 properties",
       }),
-    docType: z.string(),
+    docType: latin1StringMax128,
     // Structure only. Date ordering and expiry are checked in validateValidityInfo.
     validityInfo: z
       .object({
@@ -51,8 +56,8 @@ export const mobileSecurityObjectSchema = z
       .object({
         status_list: z
           .object({
-            idx: z.number(),
-            uri: z.url(),
+            idx: z.int().min(0).max(UINT32_MAX),
+            uri: z.url().max(2048),
           })
           .strict(),
       })

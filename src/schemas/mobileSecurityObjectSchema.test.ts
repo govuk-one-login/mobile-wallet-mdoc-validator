@@ -1,6 +1,7 @@
 import { Tag } from "cbor2";
 import { TAGS } from "../constants/tags";
 import { parseSchema } from "../parseSchema";
+import { MdocValidationError } from "../MdocValidationError";
 import { mobileSecurityObjectSchema } from "./mobileSecurityObjectSchema";
 
 const tdate = (value: string) => new Tag(TAGS.DATE_TIME, value);
@@ -63,8 +64,28 @@ describe("mobileSecurityObjectSchema", () => {
     expect(() => parseMso(mso)).toThrow();
   });
 
-  it("rejects a non-string docType", () => {
-    expect(() => parseMso(withMso({ docType: 1 }))).toThrow();
+  describe("docType", () => {
+    it("rejects a non-string docType", () => {
+      expect(() => parseMso(withMso({ docType: 1 }))).toThrow();
+    });
+
+    it("accepts a docType exactly 128 characters long", () => {
+      expect(() =>
+        parseMso(withMso({ docType: "a".repeat(128) })),
+      ).not.toThrow();
+    });
+
+    it("rejects an empty docType", () => {
+      expect(() => parseMso(withMso({ docType: "" }))).toThrow();
+    });
+
+    it("rejects a docType longer than 128 characters", () => {
+      expect(() => parseMso(withMso({ docType: "a".repeat(129) }))).toThrow();
+    });
+
+    it("rejects a non-Latin-1 docType", () => {
+      expect(() => parseMso(withMso({ docType: "€" }))).toThrow();
+    });
   });
 
   describe("version and digestAlgorithm", () => {
@@ -122,6 +143,50 @@ describe("mobileSecurityObjectSchema", () => {
         parseMso(
           withMso({
             valueDigests: { "org.test.namespace.1": new Map([[0, "abc"]]) },
+          }),
+        ),
+      ).toThrow();
+    });
+
+    it("accepts a key exactly 256 characters long", () => {
+      expect(() =>
+        parseMso(
+          withMso({
+            valueDigests: {
+              ["a".repeat(256)]: new Map([[0, new Uint8Array(32)]]),
+            },
+          }),
+        ),
+      ).not.toThrow();
+    });
+
+    it("rejects an empty key", () => {
+      expect(() =>
+        parseMso(
+          withMso({
+            valueDigests: { "": new Map([[0, new Uint8Array(32)]]) },
+          }),
+        ),
+      ).toThrow();
+    });
+
+    it("rejects a key longer than 256 characters", () => {
+      expect(() =>
+        parseMso(
+          withMso({
+            valueDigests: {
+              ["a".repeat(257)]: new Map([[0, new Uint8Array(32)]]),
+            },
+          }),
+        ),
+      ).toThrow();
+    });
+
+    it("rejects a non-Latin-1 key", () => {
+      expect(() =>
+        parseMso(
+          withMso({
+            valueDigests: { "€": new Map([[0, new Uint8Array(32)]]) },
           }),
         ),
       ).toThrow();
@@ -316,11 +381,70 @@ describe("mobileSecurityObjectSchema", () => {
       ).toThrow();
     });
 
+    it.each([
+      ["negative", -1],
+      ["fractional", 1.5],
+      ["above the uint32 maximum", 4294967296],
+    ])("rejects an idx that is %s", (_label, idx) => {
+      expect(() =>
+        parseMso(
+          withMso({
+            status: { status_list: { idx, uri: "https://example.com/s" } },
+          }),
+        ),
+      ).toThrow();
+    });
+
+    it.each([
+      ["zero", 0],
+      ["the uint32 maximum", 4294967295],
+    ])("accepts an idx of %s", (_label, idx) => {
+      expect(() =>
+        parseMso(
+          withMso({
+            status: { status_list: { idx, uri: "https://example.com/s" } },
+          }),
+        ),
+      ).not.toThrow();
+    });
+
+    it("rejects an idx that is out of range with INVALID_SCHEMA", () => {
+      try {
+        parseMso(
+          withMso({
+            status: {
+              status_list: { idx: -1, uri: "https://example.com/s" },
+            },
+          }),
+        );
+        throw new Error("expected to throw");
+      } catch (error) {
+        expect(error).toBeInstanceOf(MdocValidationError);
+        expect((error as MdocValidationError).code).toBe("INVALID_SCHEMA");
+      }
+    });
+
     it("rejects a non-URL uri", () => {
       expect(() =>
         parseMso(
           withMso({ status: { status_list: { idx: 0, uri: "not-a-url" } } }),
         ),
+      ).toThrow();
+    });
+
+    it("accepts a uri exactly 2048 characters long", () => {
+      const uri = `https://example.com/${"a".repeat(2048 - "https://example.com/".length)}`;
+      expect(uri.length).toBe(2048);
+      expect(() =>
+        parseMso(withMso({ status: { status_list: { idx: 0, uri } } })),
+      ).not.toThrow();
+    });
+
+    it("rejects a uri longer than 2048 characters", () => {
+      const uri = `https://example.com/${"a".repeat(2049 - "https://example.com/".length)}`;
+      expect(uri.length).toBe(2049);
+      expect(() =>
+        parseMso(withMso({ status: { status_list: { idx: 0, uri } } })),
       ).toThrow();
     });
 
