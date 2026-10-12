@@ -36,7 +36,7 @@
     "publish-v0-to-npm": "./publish-v0-to-npm.sh"
   },
   "dependencies": {
-    "cbor2": "2.3.0",
+    "cbor2": "2.4.0",
     "jose": "^6.2.10",
     "zod": "4.6.5"
   },
