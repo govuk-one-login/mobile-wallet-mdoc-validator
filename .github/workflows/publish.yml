@@ -85,7 +85,7 @@ jobs:
       # Release created as published (not draft), only after a successful npm publish.
       - name: Create GitHub release
         if: steps.existing-release.outputs.exists == 'false'
-        uses: softprops/action-gh-release@aec2ec56f94eb8180ceec724245f64ef008b89f5 # v2.4.0
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ github.ref_name }}
           draft: false
