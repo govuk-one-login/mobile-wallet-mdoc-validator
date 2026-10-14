@@ -53,12 +53,7 @@ export const primitiveScalarSchema = z.union([
  * A tag used to classify a primitive value's type for homogeneity checks.
  */
 export type PrimitiveType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "date"
-  | "full-date"
-  | "bytes";
+  "string" | "number" | "boolean" | "date" | "full-date" | "bytes";
 
 /**
  * Classifies a value as one of the primitive types, or null if it is not a
