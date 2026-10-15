@@ -36,7 +36,7 @@ const uint8ArrayScalar = z
   });
 
 /**
- * The five primitive DataElementValue scalars: Latin-1 string, in-range number,
+ * The six primitive DataElementValue scalars: Latin-1 string, in-range number,
  * boolean, tag-0 RFC3339 UTC date-time, tag-1004 RFC3339 full-date, and
  * bounded Uint8Array.
  */

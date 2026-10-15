@@ -31,13 +31,13 @@ Two mechanisms raise failures:
 
 ### Does it collect all violations or stop at the first?
 
-| Layer                                        | Behaviour                                                            |
-| -------------------------------------------- | -------------------------------------------------------------------- |
-| Zod schema (`parseSchema`)                   | Collects all issues for that schema; joins them with `"; "`.         |
-| `elementValueSchema` homogeneity refinements | Stop at the first offending element (`return` after `ctx.addIssue`). |
-| `validateNamespaces`                         | Stops at the first duplicate (`throw`).                              |
-| `validateIssuerAuth` sub-steps               | Run in sequence; the first failing step throws and halts.            |
-| `validateValidityInfo`                       | Collects all date errors, then throws one message.                   |
+| Layer                                        | Behaviour                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Zod schema (`parseSchema`)                   | Collects all issues for that schema; joins them with `"; "`.                                 |
+| `elementValueSchema` homogeneity refinements | Stop at the first offending element (`return` after `ctx.addIssue`).                         |
+| `validateNamespaces`                         | Re-parses each item (`issuerSignedItemSchema`), then stops at the first duplicate (`throw`). |
+| `validateIssuerAuth` sub-steps               | Run in sequence; the first failing step throws and halts.                                    |
+| `validateValidityInfo`                       | Collects all date errors, then throws one message.                                           |
 
 ### Time is captured at call time
 
@@ -181,8 +181,15 @@ issued without `status` are rejected.
 
 ## Namespace cross-item rules
 
-Source: `src/nameSpaces.ts` (`validateNamespaces`). After schema parsing, each
-namespace's items are checked for uniqueness. Stops at the first duplicate.
+Source: `src/nameSpaces.ts` (`validateNamespaces`). The top-level
+`IssuerSigned` schema only validates each namespace entry as a tag-24 encoded
+blob; it does not decode the items. So `validateNamespaces` decodes each item's
+tag-24 bytes and **re-parses it with `issuerSignedItemSchema`** (via
+`parseNamespaces` → `parseSchema`) before checking uniqueness. This means items
+are schema-parsed here and then **again** in `validateDigestsMatchMso` — there
+is no single up-front parse of the decoded items. A malformed item therefore
+surfaces as `INVALID_SCHEMA` from this step. Uniqueness checks stop at the
+first duplicate.
 
 | Rule                                                 | Message                                               | Code                          |
 | ---------------------------------------------------- | ----------------------------------------------------- | ----------------------------- |
@@ -251,10 +258,18 @@ Wrapper message: `One or more dates are invalid - <joined fragments>` /
 
 Selective disclosure: every presented item must match an MSO digest; MSO
 digests with no presented item are allowed. For each presented item, the
-original `IssuerSignedItemBytes` (recovered via `getEncoded`, enabled by
-`saveOriginal`) are hashed with SHA-256 and compared against the MSO digest for
-that `digestID`. The hash is computed over the bytes as received, never a
-re-encode (a re-encode is not guaranteed to be byte-identical).
+runtime order is: recover the original `IssuerSignedItemBytes` (via
+`getEncoded`, enabled by `saveOriginal`) → compute the SHA-256 hash over those
+bytes → re-parse the item with `issuerSignedItemSchema` to read its `digestID`
+→ look up the MSO digest for that `digestID` → compare. The hash is computed
+over the bytes as received, never a re-encode (a re-encode is not guaranteed to
+be byte-identical).
+
+Because this step re-parses each item with `issuerSignedItemSchema` (via
+`parseSchema`), a malformed item encountered here surfaces as `INVALID_SCHEMA`,
+not `INVALID_DIGESTS`. In the normal flow the same items were already parsed in
+`validateNamespaces` (see below), so a schema failure usually fires there
+first; `INVALID_SCHEMA` from this step is nonetheless reachable.
 
 | Rule                                 | Message                                                                              | Code              |
 | ------------------------------------ | ------------------------------------------------------------------------------------ | ----------------- |
