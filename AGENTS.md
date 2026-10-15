@@ -15,13 +15,13 @@ is valid and throws an `MdocValidationError` when it is not.
 
 ## Commands that matter
 
-| Command | What it does |
-| --- | --- |
-| `nvm use` + `npm install` | Select the pinned Node version (`.nvmrc`) and install dependencies. Use `npm ci` for a clean, lockfile-exact install. |
-| `npm run format` | Format the whole repo with Prettier (`prettier --write .`). |
-| `npm run build` | Build the dual ESM/CJS bundle with tsdown. |
-| `npm test` | Run the Jest suite with coverage under a fixed clock (`TZ=UTC jest --coverage`). |
-| `npm run verify` | The single verification gate. Runs typecheck → lint → format check → build → test, mirroring CI (`.github/workflows/validate.yaml`). |
+| Command                   | What it does                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `nvm use` + `npm install` | Select the pinned Node version (`.nvmrc`) and install dependencies. Use `npm ci` for a clean, lockfile-exact install.                |
+| `npm run format`          | Format the whole repo with Prettier (`prettier --write .`).                                                                          |
+| `npm run build`           | Build the dual ESM/CJS bundle with tsdown.                                                                                           |
+| `npm test`                | Run the Jest suite with coverage under a fixed clock (`TZ=UTC jest --coverage`).                                                     |
+| `npm run verify`          | The single verification gate. Runs typecheck → lint → format check → build → test, mirroring CI (`.github/workflows/validate.yaml`). |
 
 `npm run verify` is the one command to run before considering work done. It
 chains `npm run typecheck && npm run lint && npm run format:check && npm run
