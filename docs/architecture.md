@@ -21,16 +21,16 @@ flowchart TD
     D -->|"IssuerSigned { nameSpaces, issuerAuth }"| E["validateNamespaces(nameSpaces)<br/>nameSpaces.ts"]
     E --> F["validateIssuerAuth(issuerAuth, nameSpaces)<br/>issuerAuth.ts"]
 
-    subgraph IA["validateIssuerAuth (issuerAuth.ts)"]
+    subgraph IA["validateIssuerAuth (issuerAuth.ts) — step 5"]
         direction TD
         F1["destructure COSE_Sign1<br/>[protectedHeader, unprotectedHeader, payload, signature]"]
-        F1 --> F2["validateProtectedHeader(protectedHeader)"]
-        F2 --> F3["validateUnprotectedHeader(unprotectedHeader) → X509Certificate"]
-        F3 --> F4["verifySignature(cert.publicKey, protectedHeader, payload, signature)"]
-        F4 --> F5["parseMobileSecurityObject(payload) → MobileSecurityObject"]
-        F5 --> F6["validateValidityInfo(mso.validityInfo)"]
-        F6 --> F7["validateDigestsMatchMso(mso.valueDigests, nameSpaces)"]
-        F7 --> F8["validateDeviceKey(mso.deviceKeyInfo.deviceKey)"]
+        F1 --> F2["5.1 validateProtectedHeader(protectedHeader)"]
+        F2 --> F3["5.2 validateUnprotectedHeader(unprotectedHeader) → X509Certificate"]
+        F3 --> F4["5.3 verifySignature(cert.publicKey, protectedHeader, payload, signature)"]
+        F4 --> F5["5.4 parseMobileSecurityObject(payload) → MobileSecurityObject"]
+        F5 --> F6["5.5 validateValidityInfo(mso.validityInfo)"]
+        F6 --> F7["5.6 validateDigestsMatchMso(mso.valueDigests, nameSpaces)"]
+        F7 --> F8["5.7 validateDeviceKey(mso.deviceKeyInfo.deviceKey)"]
     end
 
     F --> IA
@@ -73,20 +73,21 @@ Both `nameSpaces` and `issuerAuth` are passed into `validateIssuerAuth`;
 
 ## `validateIssuerAuth` sub-steps
 
-Source: `src/issuerAuth.ts`. The function destructures the COSE_Sign1 tuple and
-runs the following in order. The ordering is deliberate: the signature is
-verified **before** anything reads the MSO payload, so every downstream check
-operates on signed data.
+Source: `src/issuerAuth.ts`. `validateIssuerAuth` is step 5 of the top-level
+sequence; its sub-steps are numbered `5.1`–`5.7` to tie them to that parent. It
+destructures the COSE_Sign1 tuple and runs the following in order. The ordering
+is deliberate: the signature is verified **before** anything reads the MSO
+payload, so every downstream check operates on signed data.
 
 | #   | Sub-step           | Function                                                               | Input → output                                | Responsibility                                                                                                        |
 | --- | ------------------ | ---------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1   | protected header   | `validateProtectedHeader(protectedHeader)`                             | `Uint8Array` → void                           | Decode and require a single `alg` parameter equal to `-7` (ES256).                                                    |
-| 2   | unprotected header | `validateUnprotectedHeader(unprotectedHeader)`                         | `Map<number, Uint8Array>` → `X509Certificate` | Require a single `x5chain` (33) that parses as one X.509 certificate.                                                 |
-| 3   | signature          | `verifySignature(cert.publicKey, protectedHeader, payload, signature)` | public key + bytes → void                     | Build the COSE `Signature1` structure, encode it, and verify (ES256 / P-1363).                                        |
-| 4   | MSO parse          | `parseMobileSecurityObject(payload)`                                   | `Uint8Array` → `MobileSecurityObject`         | Parse the payload as tag-24 `MobileSecurityObjectBytes`, decode its contents, and parse `mobileSecurityObjectSchema`. |
-| 5   | validity info      | `validateValidityInfo(mso.validityInfo)`                               | `ValidityInfo` → void                         | Compare `signed` / `validFrom` / `validUntil` / `expectedUpdate` against `new Date()` captured at call time.          |
-| 6   | digest matching    | `validateDigestsMatchMso(mso.valueDigests, nameSpaces)`                | digests + namespaces → void                   | Hash each presented item's original bytes and match it to an MSO digest (selective disclosure).                       |
-| 7   | device key         | `await validateDeviceKey(mso.deviceKeyInfo.deviceKey)`                 | `Map` → void                                  | Require EC2 / P-256 with exactly keys `[1, -1, -2, -3]`, importable as an ECDSA key.                                  |
+| 5.1 | protected header   | `validateProtectedHeader(protectedHeader)`                             | `Uint8Array` → void                           | Decode and require a single `alg` parameter equal to `-7` (ES256).                                                    |
+| 5.2 | unprotected header | `validateUnprotectedHeader(unprotectedHeader)`                         | `Map<number, Uint8Array>` → `X509Certificate` | Require a single `x5chain` (33) that parses as one X.509 certificate.                                                 |
+| 5.3 | signature          | `verifySignature(cert.publicKey, protectedHeader, payload, signature)` | public key + bytes → void                     | Build the COSE `Signature1` structure, encode it, and verify (ES256 / P-1363).                                        |
+| 5.4 | MSO parse          | `parseMobileSecurityObject(payload)`                                   | `Uint8Array` → `MobileSecurityObject`         | Parse the payload as tag-24 `MobileSecurityObjectBytes`, decode its contents, and parse `mobileSecurityObjectSchema`. |
+| 5.5 | validity info      | `validateValidityInfo(mso.validityInfo)`                               | `ValidityInfo` → void                         | Compare `signed` / `validFrom` / `validUntil` / `expectedUpdate` against `new Date()` captured at call time.          |
+| 5.6 | digest matching    | `validateDigestsMatchMso(mso.valueDigests, nameSpaces)`                | digests + namespaces → void                   | Hash each presented item's original bytes and match it to an MSO digest (selective disclosure).                       |
+| 5.7 | device key         | `await validateDeviceKey(mso.deviceKeyInfo.deviceKey)`                 | `Map` → void                                  | Require EC2 / P-256 with exactly keys `[1, -1, -2, -3]`, importable as an ECDSA key.                                  |
 
 ### Intermediate outputs
 
@@ -103,6 +104,24 @@ operates on signed data.
   original `IssuerSignedItemBytes`, recovered via `getEncoded` (enabled by
   `saveOriginal` in `decodeCbor`). Items are therefore schema-parsed both here
   and earlier in `validateNamespaces`.
+
+### Where CBOR decoding happens
+
+`decodeCbor` runs more than once, so `INVALID_CBOR` can surface at several
+points beyond the top-level decode. Every call site (confirmed in source):
+
+| Call site                  | Label                       | Purpose                                                      |
+| -------------------------- | --------------------------- | ------------------------------------------------------------ |
+| `validateMdoc.ts` (step 2) | `IssuerSigned`              | Decode the whole credential.                                 |
+| `nameSpaces.ts` (step 4)   | `IssuerSignedItem`          | Decode each item's tag-24 bytes before the duplicate checks. |
+| `issuerAuth.ts` (step 5.1) | `Protected header`          | Decode the protected-header bytes before the `alg` check.    |
+| `issuerAuth.ts` (step 5.4) | `MobileSecurityObjectBytes` | Decode the payload (tag-24 wrapper).                         |
+| `issuerAuth.ts` (step 5.4) | `MobileSecurityObject`      | Decode the wrapper's contents into the MSO structure.        |
+| `issuerAuth.ts` (step 5.6) | `IssuerSignedItem`          | Decode each presented item's tag-24 bytes before hashing.    |
+
+The flowchart shows only the top-level decode (step 2) to stay readable; the
+per-item, protected-header, and MSO decodes happen inside steps 4 and 5 as
+listed above.
 
 ## Component summary
 
