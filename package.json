@@ -38,7 +38,7 @@
   "dependencies": {
     "cbor2": "2.4.0",
     "jose": "^6.2.10",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
