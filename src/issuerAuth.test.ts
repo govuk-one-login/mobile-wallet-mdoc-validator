@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import { MdocValidationError } from "./MdocValidationError";
 import { TestMdocBuilder } from "./testing/TestMdocBuilder";
 import { validateIssuerAuth } from "./issuerAuth";
+import { NameSpaces } from "./schemas/issuerSignedSchema";
 
 const validate = (builder: TestMdocBuilder) => {
   const { issuerAuth, nameSpaces } = builder.buildIssuerSigned();
@@ -105,6 +106,24 @@ describe("validateIssuerAuth", () => {
         validate(new TestMdocBuilder().withMismatchedSigningCertificate()),
       ).rejects.toThrow("Signature not verified");
     });
+
+    it("wraps a crypto error when verify throws", async () => {
+      const { issuerAuth, nameSpaces } =
+        new TestMdocBuilder().buildIssuerSigned();
+      // The schema guarantees a Uint8Array signature, so this guard is only
+      // reachable by bypassing it: a non-bytes signature makes Node's verify()
+      // throw (ERR_INVALID_ARG_TYPE) rather than return false.
+      const [protectedHeader, unprotectedHeader, payload] = issuerAuth;
+      const tampered = [
+        protectedHeader,
+        unprotectedHeader,
+        payload,
+        123 as unknown as Uint8Array,
+      ] as unknown as typeof issuerAuth;
+      await expect(validateIssuerAuth(tampered, nameSpaces)).rejects.toThrow(
+        /Signature could not be verified - /,
+      );
+    });
   });
 
   describe("value digests", () => {
@@ -126,6 +145,28 @@ describe("validateIssuerAuth", () => {
         ),
       ).rejects.toThrow(
         "Digest mismatch for element identifier family_name with digest ID 10 in namespace org.test.namespace.2",
+      );
+    });
+
+    it("rejects a presented namespace absent from the MSO digests", async () => {
+      const { issuerAuth } = new TestMdocBuilder().buildIssuerSigned();
+      const nameSpaces = {
+        "org.test.unknown.namespace": [new Tag(24, new Uint8Array([1, 2, 3]))],
+      } as unknown as NameSpaces;
+      await expect(validateIssuerAuth(issuerAuth, nameSpaces)).rejects.toThrow(
+        "No digests found for namespace org.test.unknown.namespace",
+      );
+    });
+
+    it("rejects an item whose original bytes cannot be recovered", async () => {
+      const { issuerAuth } = new TestMdocBuilder().buildIssuerSigned();
+      // A Tag constructed directly (not via decodeCbor with saveOriginal) has
+      // no stored original bytes, so getEncoded() returns undefined.
+      const nameSpaces = {
+        "org.test.namespace.1": [new Tag(24, new Uint8Array([1, 2, 3]))],
+      } as unknown as NameSpaces;
+      await expect(validateIssuerAuth(issuerAuth, nameSpaces)).rejects.toThrow(
+        "Could not recover original bytes for an item in namespace org.test.namespace.1",
       );
     });
   });

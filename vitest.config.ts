@@ -2,6 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    globals: true,
     include: ["src/**/*.test.ts"],
     typecheck: {
       enabled: true,
@@ -12,7 +13,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts"],
+      exclude: ["src/**/*.test.ts", "src/index.ts", "src/testing/**"],
       thresholds: {
         lines: 100,
         functions: 100,
