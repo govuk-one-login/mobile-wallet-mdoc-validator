@@ -9,8 +9,7 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true,
-    "types": ["node", "jest"],
-    "esModuleInterop": true
+    "types": ["node"]
   },
   "exclude": ["node_modules", "dist"]
 }
