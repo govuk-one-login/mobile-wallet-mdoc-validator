@@ -1,15 +1,13 @@
 import { errorMessage, MdocValidationError } from "./MdocValidationError";
 
 describe("MdocValidationError", () => {
-  it("defaults the code to VALIDATION_FAILED", () => {
-    const error = new MdocValidationError("boom");
-    expect(error.message).toBe("boom");
-    expect(error.code).toBe("VALIDATION_FAILED");
-    expect(error.name).toBe("MdocValidationError");
-    expect(error).toBeInstanceOf(Error);
-  });
+  it("sets message, name, and code (defaulting when omitted)", () => {
+    const defaulted = new MdocValidationError("boom");
+    expect(defaulted.message).toBe("boom");
+    expect(defaulted.name).toBe("MdocValidationError");
+    expect(defaulted).toBeInstanceOf(Error);
+    expect(defaulted.code).toBe("VALIDATION_FAILED");
 
-  it("uses the provided code", () => {
     expect(new MdocValidationError("boom", "INVALID_CBOR").code).toBe(
       "INVALID_CBOR",
     );
