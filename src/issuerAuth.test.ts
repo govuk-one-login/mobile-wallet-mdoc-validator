@@ -1,4 +1,5 @@
 import { Tag } from "cbor2";
+import { vi } from "vitest";
 import { MdocValidationError } from "./MdocValidationError";
 import { TestMdocBuilder } from "./testing/TestMdocBuilder";
 import { validateIssuerAuth } from "./issuerAuth";
@@ -10,11 +11,12 @@ const validate = (builder: TestMdocBuilder) => {
 
 describe("validateIssuerAuth", () => {
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(new Date("2025-09-10T15:30:00Z"));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2025-09-10T15:30:00Z"));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it("accepts a valid issuerAuth", async () => {
