@@ -15,7 +15,7 @@ issuer, not just one built in-repo by `TestMdocBuilder`.
 ### Validity note
 
 The credential carries fixed `validityInfo` dates, so the test pins the clock
-(`jest.useFakeTimers().setSystemTime(new Date("2026-09-22T15:30:00Z"))`) to a
+(`vi.useFakeTimers(); vi.setSystemTime(new Date("2026-09-22T15:30:00Z"))`) to a
 time inside its validity window. If this fixture is ever regenerated, update
 that timestamp to fall within the new credential's `validFrom`/`validUntil`
 range, or the validity checks in `validateValidityInfo` will fail.
