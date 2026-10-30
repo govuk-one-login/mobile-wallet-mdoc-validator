@@ -1,5 +1,6 @@
 import { encode } from "cbor2";
 import { base64url } from "jose";
+import { vi } from "vitest";
 import { TestMdocBuilder } from "./testing/TestMdocBuilder";
 import { validateMdoc } from "./validateMdoc";
 import { readFileSync } from "node:fs";
@@ -7,11 +8,12 @@ import { join } from "node:path";
 
 describe("validateMdoc", () => {
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(new Date("2025-09-10T15:30:00Z"));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2025-09-10T15:30:00Z"));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it("accepts a valid credential", async () => {
@@ -26,7 +28,8 @@ describe("validateMdoc", () => {
       join(__dirname, "testing/fixtures", "external-credential.txt"),
       "utf8",
     ).trim();
-    jest.useFakeTimers().setSystemTime(new Date("2026-09-22T15:30:00Z"));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-22T15:30:00Z"));
     await expect(validateMdoc(EXTERNAL_CREDENTIAL)).resolves.toBeUndefined();
   });
 
