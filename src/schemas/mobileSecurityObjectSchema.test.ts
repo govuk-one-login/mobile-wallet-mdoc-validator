@@ -16,7 +16,6 @@ const validMso = () => ({
       [-2, new Uint8Array(32)],
       [-3, new Uint8Array(32)],
     ]),
-    keyAuthorizations: { nameSpaces: ["org.test.namespace.1"] },
   },
   valueDigests: {
     "org.test.namespace.1": new Map<number, Uint8Array>([
@@ -204,80 +203,13 @@ describe("mobileSecurityObjectSchema", () => {
       ).toThrow();
     });
 
-    it("rejects a missing keyAuthorizations", () => {
-      expect(() =>
-        parseMso(
-          withMso({
-            deviceKeyInfo: { deviceKey: new Map<unknown, unknown>() },
-          }),
-        ),
-      ).toThrow();
-    });
-
-    it("rejects a missing nameSpaces in keyAuthorizations", () => {
+    it("rejects a keyAuthorizations field", () => {
       expect(() =>
         parseMso(
           withMso({
             deviceKeyInfo: {
               ...validMso().deviceKeyInfo,
-              keyAuthorizations: {},
-            },
-          }),
-        ),
-      ).toThrow();
-    });
-
-    it("rejects a dataElements authorization", () => {
-      expect(() =>
-        parseMso(
-          withMso({
-            deviceKeyInfo: {
-              ...validMso().deviceKeyInfo,
-              keyAuthorizations: {
-                nameSpaces: ["org.test.namespace.1"],
-                dataElements: { "org.test.namespace.1": ["family_name"] },
-              },
-            },
-          }),
-        ),
-      ).toThrow();
-    });
-
-    it("rejects an empty nameSpaces array", () => {
-      expect(() =>
-        parseMso(
-          withMso({
-            deviceKeyInfo: {
-              ...validMso().deviceKeyInfo,
-              keyAuthorizations: { nameSpaces: [] },
-            },
-          }),
-        ),
-      ).toThrow();
-    });
-
-    it("rejects a non-string namespace", () => {
-      expect(() =>
-        parseMso(
-          withMso({
-            deviceKeyInfo: {
-              ...validMso().deviceKeyInfo,
-              keyAuthorizations: { nameSpaces: [1] },
-            },
-          }),
-        ),
-      ).toThrow();
-    });
-
-    it("rejects duplicate nameSpaces", () => {
-      expect(() =>
-        parseMso(
-          withMso({
-            deviceKeyInfo: {
-              ...validMso().deviceKeyInfo,
-              keyAuthorizations: {
-                nameSpaces: ["org.test.namespace.1", "org.test.namespace.1"],
-              },
+              keyAuthorizations: { nameSpaces: ["org.test.namespace.1"] },
             },
           }),
         ),
