@@ -29,7 +29,7 @@ describe("validateMdoc", () => {
       "utf8",
     ).trim();
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-22T15:30:00Z"));
+    vi.setSystemTime(new Date("2026-11-20T15:30:00Z"));
     await expect(validateMdoc(EXTERNAL_CREDENTIAL)).resolves.toBeUndefined();
   });
 

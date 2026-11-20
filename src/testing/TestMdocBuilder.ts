@@ -109,9 +109,6 @@ export class TestMdocBuilder {
       valueDigests,
       deviceKeyInfo: {
         deviceKey: this.deviceKey,
-        keyAuthorizations: {
-          nameSpaces: Array.from(this.namespaces.keys()),
-        },
       },
       docType: "org.test.document",
       status: {

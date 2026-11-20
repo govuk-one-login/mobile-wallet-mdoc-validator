@@ -12,25 +12,13 @@ export const mobileSecurityObjectSchema = z
     // Only SHA-256 is supported. Widening this means the hash used in
     // validateDigestsMatchMso must be chosen from this field.
     digestAlgorithm: z.literal("SHA-256"),
-    // .strict() rejects the spec's optional keyInfo field.
+    // .strict() rejects the spec's optional keyAuthorizations and keyInfo
+    // fields.
     deviceKeyInfo: z
       .object({
         // Loosely typed here; key type, curve and coordinates are checked
         // in validateDeviceKey.
         deviceKey: z.map(z.unknown(), z.unknown()),
-        // Narrower than the spec: keyAuthorizations and its nameSpaces are
-        // optional there but required here, and .strict() rejects the
-        // dataElements alternative.
-        keyAuthorizations: z
-          .object({
-            nameSpaces: z
-              .array(z.string())
-              .min(1)
-              .refine((items) => new Set(items).size === items.length, {
-                message: "must NOT have duplicate items",
-              }),
-          })
-          .strict(),
       })
       .strict(),
     // Namespace to (digest ID to digest). Matched against presented items in

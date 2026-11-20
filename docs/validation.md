@@ -163,18 +163,17 @@ Source: `src/schemas/mobileSecurityObjectSchema.ts`. The MSO is decoded from the
 `MobileSecurityObject` (`parseMobileSecurityObject` in `src/issuerAuth.ts`). The
 object and its nested objects are `.strict()`.
 
-| Field                                        | Rule                                                                                     | Limit / constant                 | Message                                 |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------- |
-| `version`                                    | Literal `"1.0"`.                                                                         | `z.literal("1.0")`               | framework default                       |
-| `digestAlgorithm`                            | Literal `"SHA-256"` (only SHA-256 supported).                                            | `z.literal("SHA-256")`           | framework default                       |
-| `deviceKeyInfo.deviceKey`                    | `Map` (type/curve/coords checked later in `validateDeviceKey`).                          | `z.map(...)`                     | framework default                       |
-| `deviceKeyInfo.keyAuthorizations.nameSpaces` | Array of strings, ≥1, no duplicates. `.strict()` rejects the `dataElements` alternative. | min 1 + refine                   | `must NOT have duplicate items`         |
-| `valueDigests`                               | Record of namespace → `Map<number, Uint8Array>`; ≥1 property.                            | `latin1StringMax256` keys        | `must NOT have fewer than 1 properties` |
-| `docType`                                    | Non-empty, ≤128 chars, Latin-1 only.                                                     | `latin1StringMax128`             | framework default + Latin-1 message     |
-| `validityInfo.signed/validFrom/validUntil`   | Tag-0 date-time (structure only; ordering checked later).                                | `dateTimeTag`                    | date-time messages                      |
-| `validityInfo.expectedUpdate`                | Optional tag-0 date-time.                                                                | `dateTimeTag.optional()`         | date-time messages                      |
-| `status.status_list.idx`                     | Integer, 0–4294967295 (`UINT32_MAX`, 2^32-1).                                            | `z.int().min(0).max(UINT32_MAX)` | framework default                       |
-| `status.status_list.uri`                     | URL, ≤2048 chars.                                                                        | `z.url().max(2048)`              | framework default                       |
+| Field                                      | Rule                                                            | Limit / constant                 | Message                                 |
+| ------------------------------------------ | --------------------------------------------------------------- | -------------------------------- | --------------------------------------- |
+| `version`                                  | Literal `"1.0"`.                                                | `z.literal("1.0")`               | framework default                       |
+| `digestAlgorithm`                          | Literal `"SHA-256"` (only SHA-256 supported).                   | `z.literal("SHA-256")`           | framework default                       |
+| `deviceKeyInfo.deviceKey`                  | `Map` (type/curve/coords checked later in `validateDeviceKey`). | `z.map(...)`                     | framework default                       |
+| `valueDigests`                             | Record of namespace → `Map<number, Uint8Array>`; ≥1 property.   | `latin1StringMax256` keys        | `must NOT have fewer than 1 properties` |
+| `docType`                                  | Non-empty, ≤128 chars, Latin-1 only.                            | `latin1StringMax128`             | framework default + Latin-1 message     |
+| `validityInfo.signed/validFrom/validUntil` | Tag-0 date-time (structure only; ordering checked later).       | `dateTimeTag`                    | date-time messages                      |
+| `validityInfo.expectedUpdate`              | Optional tag-0 date-time.                                       | `dateTimeTag.optional()`         | date-time messages                      |
+| `status.status_list.idx`                   | Integer, 0–4294967295 (`UINT32_MAX`, 2^32-1).                   | `z.int().min(0).max(UINT32_MAX)` | framework default                       |
+| `status.status_list.uri`                   | URL, ≤2048 chars.                                               | `z.url().max(2048)`              | framework default                       |
 
 `status` is required here even though not every mdoc carries it; credentials
 issued without `status` are rejected.
